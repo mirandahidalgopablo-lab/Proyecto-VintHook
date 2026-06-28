@@ -1,7 +1,9 @@
 Plataforma de análisis de mercado y automatización para Vinted.** Detecta anuncios infravalorados en tiempo real y automatiza el reselling.
 
 Producto:https://vinthook.com
-Demo: <img width="1463" height="840" alt="vinthook-demo" src="https://github.com/user-attachments/assets/6950c31f-fcf1-45df-9752-c8540cd81c22" />
+
+Demo: https://github.com/user-attachments/assets/2ee3b712-361c-46db-94d0-4cc10daea48e
+
 
 Qué es
 
