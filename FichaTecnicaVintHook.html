@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VintHook — Ficha Tecnica</title>
+<meta name="description" content="Arquitectura y decisiones de ingenieria de VintHook: backend Flask monolitico, busqueda concurrente en 26 mercados, estadistica de precios por IQR, AutoPilot en hilo daemon y despliegue continuo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#13121f;
+  --surface:#1a1825;
+  --surface-2:#211f2e;
+  --surface-3:#2a2836;
+  --space-black:#0d0c16;
+  --primary:#cdbdff;
+  --secondary:#ffa9fc;
+  --tertiary:#f0b0ff;
+  --text:#e4e0f3;
+  --text-dim:rgba(228,224,243,.62);
+  --text-faint:rgba(228,224,243,.34);
+  --line:rgba(240,176,255,.20);
+  --line-strong:rgba(240,176,255,.42);
+  --grid-line:rgba(228,224,243,.07);
+  --green:#2adec4;
+  --amber:#f59e0b;
+  --red:#ffb4ab;
+  --font:'Plus Jakarta Sans',system-ui,sans-serif;
+  --mono:'Space Mono','JetBrains Mono',monospace;
+  --max:1220px;
+  --pad-x:clamp(18px,4vw,40px);
+  --nav-h:64px;
+  --logo:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAK/ElEQVR4nO2aeXRU1R3Hf3d5s2QyWSQksngUCyrDohIKhAQyAVTsUSvKYIEEiQoaxKJ4AKmBYTwVFBoRsCJSC1ro6cn0WLQaVJZkyAYaECOE1kq1IkZTAkzCrO8uPXeGeFgEDyEsnr7PP5NM7r3v3d/93t9ybwAMDAwMDAwMDAwMDAwMDP7vQO3t6AY3bnAt+NH+Xi8IACTP5Z1cLol/rJHDAdLjQeIcxjXoEAVIkAgBko/eXtEPIlf0jOgtgov4iiGET1pps8kM12SGt8xZkn3s+OPOpgSkRl+1aietWx++nXFMEJLft5dSxN6VYCQsWioilubGZWXDdwBIdI4KOwl6rh3GubwYvMCRgJSgH7+pR5MBobgdpZTKQHEzSQ5YS4XPar5+AQA96XJJ4vUCP9O4ubnlxOdD7MM3fA9DsPsKXW8FQPGdoEZve4YuBYDJBCZCXACww+Xy4rONe0F8gAtKiRfG8fsHVa7mgdQHdRGIKmNSaiZIDYkAhJDAdaZrFiG6X8f6PufN2u92A/qhfav8iQcAFhWNSm6opf/Qw5ZUTKRGiFofFDMsY0E1SU6wjVKrv+z1upw73SCxB87PD+D2dHK490olvYxezAM0cAxJolGTZJ2u0h+yZ0TuTemmj0lICS2iGtaAJ5i/+Q9fqGTa0OD9QYPHnalH/HOXeAqYPZ0QpFmTwquv6BYck3RlaGznHuHx1CxbQVKKSUR07kKeVpZpcP3weBeF3Nzy2PYpzKpcUNBvj8zv+4ksHFI1//sGCKBgQM3HE3p/IvL714kZd1Rlqa9drlJy4jhut/IfEs25r/aaif1rA+N77+YFN+84sGZNuaWtzUPDfJPz+30s8vvukYWDK1fHx5EnjXNRFaDw+ZwcwI1vyEElkrQe5ExIPagVz7qr6nqXY48JpESJncQcogkkmQZHvoUlsS3thZOIqwLJxv3RZxFPSKAUY2sSm19YmBce3bPM7M6vTg+3ai9wBoBooKXL9WSBMpjDsaDdjq/DVTBleOUDBf3qZX6fejl5UFWp+i4T6jSlgkmZVRsnOuplQf9P5LQR28aeuHptaph+a82g/H4f8Qm9d4tJA2p2SSlxrL9S2JDKkvy+9bKg36fywezKeSc+95IqQOHz5XHliF715bwOWutuIbhkYcvYR2+rytoJmQykG6d0JXMQiTCmg2g9SheucZdbHF5Q8QIpNSjn3nKILxbMhDGVyJ7G5yCExE7I5E+4anpGg9o0zriQ9NhXN49iS9Xz4uq7DAwAAFI5IoQQT+wk5xAqkWQUWpvRYoSRzIQ7yfK/Z9UTa3gtIQSDntSreit9RHnuX/fcaFKRZGpe5Rip23OV0yCWUNnvNw3bFF99JJq/4AuBWS1UI9hml/Ome/KOVeRW4POJ+6eCOmKQWFhE4/ikAVUbecg+GlOAxE7Be1eWZ72p/ub4VdeM/Q20gUWtdmoJHek9LNr7gxX8yOQ1QLcuN+1mIVsvrDGRfm10wNK33t8L4JGP3VqddaTRVCWYBiQhuOuNuqxBsVgRn7y8XBQQR6UkElBM7jTKmC7FMb98rmzZZ+Ym6Iw8f8n5RrNGl9CYChI77f8IF/sgj1W+RqaBbr+eYIpNCZHXlr419FOlGoRBHj0kF8cmTyVK7Sxj2+J42OtQ54c7YhCvdxx3uUqxkrvJGnk9Lnd7rzdLvytSE82FcurISXpR0pavOBcidIxOmXNvpTPcQh7nDATQgP9nPc0epZadMFCfMqzSBXpiNlLJtTnwzvL3s7coh6meAx0M7qiBHI54cnRVD5gPJOBnjIlwQCt2T61LSwennFVyU8CazOdpGsacgfng51oZj+KulGrYlKgvLl4/sFGpRTnJgB8tVCoCGtFTu2hPqZB6lkcjlUm2970RdCAqPPl8eaxw8LanWSD1txIQUJt/6dod2TOVY6uTmbxgQHWdCNtv4jIsMDIjYg4fuHGkv887JaaIUssDQ7fN1FtSSlQZRBP9r6zdMawoXkegDl/9DlWAQoUnFabicj/2lQpfeshUNOue2l53QCZX+zgpA80iNObJmEZNOCGZFc8quS2gVOIeX54WDWhzGeMCtODRrj3FM2dPeiQqde8xzfjlJmfb75fUAABIqjCl5G5LZfMoRRiYxdJ0gC9UoU+p4OX3s7eA1vK2FXc2S5N/+6qKTX9W33sB8S/3k2JgtjRKKTbb+fML1+c25uZWEI/Hc1rBE0+mkCz7oOmhQwdIofpOtb3EBoDvk6NXtm5eJ02tdVIIycOWsdNvqclWDk7t5yuupE8RS4DZ7aIYIY9Q6ph597brWMj8iHKSoLV+MWiEefmZkh6VRHm9IJ+ftc8uwvZFuo4D7X1fDB3P8eTII+xpcjbRGBK6JlsOyyVSSuQCL15WlrUvsdu3Y5ydD1aoekKpo/kgXgTMala1gC0Fih/2DAw2uGK19Wnyd8ZWGol92w49q8mMJEKh3Qa4YMTyfFUL/Lzq7XgtUC+LRtbed2Iu31YLTBtVmZPft05MuGG3mJRZ85EylFr9M46r+tziGz6x/4eioO8eMf6miqUnjnupFRDD4XCpYyGU2k0lR6FoLDk6IheVltRYnT6ncB9/WTXZlkN4seAEEY0iWxJ6GaG4L4HTiNcPdXV1Wush+pJgWNUSx8+K2geGC4Q6+XG5AC/bkLWPWvXVhGCVHPX4YIOYriR/+GAolthMdVbeh3lSFhNRziEgTFbYrvo7nc7THR94saofVhSFXtJE934C9Oj5TgHDBcThVeHLja/uhZ4BEjiswlu4lc6d+2BtRv3nVr7KXZcQ8pNndcYEIMBSCkFt0XCsszojO4FYJgjjeNGoLfeAoE5ka1yGidRjRRTB6LI0gAc8IjfXiT3rsptMNvacCm/AbKmNe4VbJT0fbg7NwCzlWi4iKu+RFFlp+DC+On7ncHKS5vWOE2q7mBLJvrW/C/fp0iOwEgOxAQipWdChy9IAJyZHw6Z0WyFJy37BhYgEcOHMe6pvC7bgx6IsKqgZEMGCgzBBIIDGK8PB3r2nxnSpfMOyDc59KC+PHfgXnYFkAhIojBIS49smPf2/51woIbgItKWyU3MrXeEjKaURPSCoxpkeRdRMkrGti/+JQLMcK8JJQ7Epoid3DY54aePwapUgJea2yvR0p2xqqkDgA1DKmfGLrYObv7aXc10zU2vgyxGPRfsUFjojx6dzTkZAcJFQld5f8Tg+8caqKhm1D2UsxAmyEGwN/Xvd7qyeRcOr7w4eTflbNBLmxCwOJ6Xpk17eMvS9U9/20dG1t7R+R9ZFg6iT2WwjCemHC1ZuylnX3nqBwsXCBSC9AMnpMMvfyGuAg6AmSm0pbLZas5XbsjdMHlj1okmkPR6Jtnb2N9Gy+wdtf1cz8/eoCX/LdZHBImT00YNwB9cBWcyJQG3Nr67crCZf2u5iCcFFpK2mv39g1XocuWoCNx/Y+qddOSPnC4kbwIvUqdIDQ6oX6gHrXHUYghAGhFU0VHMjoG7H1CUJ1hhY7NElr9UMnj1PqMsRZcL2HZNhuIjEkiOQKK0HLcbmoy02O5qnbrpU6qxCnFtK/Mfa7N8kdYnkabbIu+qgREBUHTZB7JMG/Jo98m5y1+DI1VWDZwshUfxmqP1nhAguEU/etdlR8vaohjNdu6mf3RO3d29uotdxDkmEQEunq9lnnj8M+frUdj9B5FkNH8/3z/Q/AhKferv0k8QduxL7kTbgjk1WeXj1eT5HXwYGBgYGBgYGBgYGBgYGBtDG/wA+4EsP//KhDgAAAABJRU5ErkJggg==");
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font);
+  font-weight:400;
+  font-size:16px;
+  line-height:1.55;
+  color:var(--text);
+  background:var(--bg);
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+img,svg{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+ul{list-style:none}
+::selection{background:var(--secondary);color:var(--bg)}
+
+/* scanline + film grain overlays (replica exacta del sistema) */
+body::before{
+  content:"";position:fixed;inset:0;z-index:9998;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(0,0,0,.16) 3px,transparent 4px);
+  opacity:.5;mix-blend-mode:multiply;
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.wrap{max-width:var(--max);margin:0 auto;padding:0 var(--pad-x);position:relative}
+section{position:relative;padding:clamp(64px,9vw,120px) 0;border-top:1px solid var(--line)}
+
+/* ===== HEADER ===== */
+.site-header{
+  position:sticky;top:0;z-index:60;width:100%;
+  background:color-mix(in srgb,var(--bg) 82%,transparent);
+  backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--line);
+}
+.top-nav{
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  max-width:var(--max);margin:0 auto;height:var(--nav-h);padding:0 var(--pad-x);
+}
+.brand{display:inline-flex;align-items:center;gap:11px;color:var(--primary)}
+.brand-mark{width:30px;height:30px;background:var(--logo) center/contain no-repeat;flex-shrink:0}
+.brand-text{font-family:var(--font);font-weight:800;font-size:1.04rem;letter-spacing:.05em;text-transform:uppercase;color:var(--text)}
+.brand-text::after{content:"\00AE";font-size:.55em;vertical-align:super;color:var(--secondary);margin-left:1px}
+.nav-right{display:flex;align-items:center;gap:14px}
+.nav-tag{font-family:var(--mono);font-size:.66rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint);display:none}
+@media(min-width:640px){.nav-tag{display:inline}}
+.lang-toggle{
+  display:inline-flex;font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.1em;
+  border:1px solid var(--line-strong);
+}
+.lang-toggle button{padding:8px 12px;color:var(--text-dim);text-transform:uppercase;transition:all .16s ease}
+.lang-toggle button+button{border-left:1px solid var(--line-strong)}
+.lang-toggle button.active{background:var(--primary);color:var(--bg)}
+
+/* ===== HERO ===== */
+.hero{
+  position:relative;min-height:calc(100dvh - var(--nav-h));
+  display:flex;align-items:center;overflow:hidden;border-top:none;
+  padding:clamp(40px,6vw,72px) 0;
+}
+.hero-bg{position:absolute;inset:0;z-index:0;pointer-events:none}
+.hero-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(to right,var(--grid-line) 1px,transparent 1px),linear-gradient(to bottom,var(--grid-line) 1px,transparent 1px);
+  background-size:64px 64px;
+  -webkit-mask-image:radial-gradient(120% 90% at 72% 34%,#000 34%,transparent 78%);
+  mask-image:radial-gradient(120% 90% at 72% 34%,#000 34%,transparent 78%);
+}
+.hero-bg::after{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--secondary);opacity:.26;animation:heroScan 5.5s linear infinite}
+@keyframes heroScan{0%{top:-1%}100%{top:101%}}
+.hero-scope{position:absolute;top:50%;right:6%;width:min(42vw,540px);height:min(42vw,540px);transform:translateY(-50%);opacity:.5;pointer-events:none;z-index:1}
+.scope-ring{position:absolute;inset:0;border:1px solid var(--line);border-radius:50%}
+.scope-ring--inner{inset:22%;border-color:var(--line-strong);border-style:dashed;animation:spin 36s linear infinite}
+.scope-ring--mid{inset:11%;border-color:var(--line)}
+.scope-cross,.scope-cross::before{position:absolute;background:var(--line)}
+.scope-cross{top:50%;left:0;width:100%;height:1px}
+.scope-cross::before{content:"";top:-50vh;left:50%;width:1px;height:100vh;transform:translateX(-50%)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hero-ping{position:absolute;top:44%;right:calc(6% + min(21vw,270px));width:10px;height:10px;background:var(--secondary);transform:translate(50%,-50%);z-index:2;animation:ping 2.6s cubic-bezier(0,0,.2,1) infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--secondary) 80%,transparent)}70%,100%{box-shadow:0 0 0 26px transparent}}
+.hero-frame{position:absolute;width:26px;height:26px;border:2px solid var(--line-strong);z-index:3}
+.hf-tl{top:18px;left:var(--pad-x);border-right:0;border-bottom:0}
+.hf-tr{top:18px;right:var(--pad-x);border-left:0;border-bottom:0}
+.hf-bl{bottom:18px;left:var(--pad-x);border-right:0;border-top:0}
+.hf-br{bottom:18px;right:var(--pad-x);border-left:0;border-top:0}
+.hero-content{position:relative;z-index:4;max-width:var(--max);margin:0 auto;padding:0 var(--pad-x);width:100%;display:flex;flex-direction:column;gap:clamp(22px,3vw,34px)}
+.eyebrow{font-family:var(--mono);font-size:.78rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--secondary);display:inline-flex;align-items:center;gap:10px}
+.eyebrow::before{content:">>>";color:var(--primary);letter-spacing:0}
+.hero-title{font-family:var(--font);font-weight:800;text-transform:uppercase;font-size:clamp(2.4rem,7vw,5.4rem);line-height:.9;letter-spacing:-.04em;color:var(--text);max-width:15ch}
+.hero-title em{font-style:normal;color:var(--primary)}
+.hero-title::after{content:"";display:inline-block;width:.42em;height:.9em;background:var(--secondary);margin-left:.1em;vertical-align:-.08em;animation:caret 1.05s steps(1) infinite}
+@keyframes caret{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+.hero-sub{max-width:58ch;color:var(--text-dim);font-size:1.06rem;line-height:1.6;padding-left:18px;border-left:2px solid var(--line-strong)}
+.hero-logo{width:clamp(64px,9vw,104px);height:clamp(64px,9vw,104px);background:var(--logo) left center/contain no-repeat;filter:drop-shadow(5px 5px 0 color-mix(in srgb,var(--secondary) 34%,transparent))}
+.hero-caption{display:flex;align-items:center;flex-wrap:wrap;gap:14px 20px;font-family:var(--mono);font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint)}
+.hero-caption b{color:var(--text-dim);font-weight:700}
+.hero-caption i{width:5px;height:5px;background:var(--secondary);display:inline-block;font-style:normal}
+.scroll-hint{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);z-index:4;display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--text-faint)}
+.scroll-hint svg{animation:bob 1.8s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+/* ===== SECTION HEADER ===== */
+.sec-head{margin:0 0 clamp(36px,5vw,60px);display:flex;flex-direction:column;gap:16px;max-width:840px}
+.sec-index{font-family:var(--mono);font-size:.72rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--secondary)}
+.sec-title{font-family:var(--font);font-weight:800;text-transform:uppercase;font-size:clamp(1.8rem,4.4vw,3.4rem);line-height:.94;letter-spacing:-.03em;color:var(--text)}
+.sec-desc{color:var(--text-dim);font-size:1.02rem;max-width:64ch}
+
+/* ===== LOGO / MARCA ===== */
+.logo-hero{display:grid;grid-template-columns:1.15fr .85fr;gap:1px;background:var(--line);border:1px solid var(--line)}
+@media(max-width:760px){.logo-hero{grid-template-columns:1fr}}
+.logo-main{background:var(--bg);min-height:clamp(260px,32vw,360px);display:grid;place-items:center;position:relative;padding:40px;overflow:hidden}
+.logo-main::before{content:"";position:absolute;inset:0;background-image:linear-gradient(to right,var(--grid-line) 1px,transparent 1px),linear-gradient(to bottom,var(--grid-line) 1px,transparent 1px);background-size:40px 40px;-webkit-mask-image:radial-gradient(70% 70% at 50% 50%,#000 30%,transparent 75%);mask-image:radial-gradient(70% 70% at 50% 50%,#000 30%,transparent 75%)}
+.logo-main .mark{position:relative;z-index:1;width:min(40%,140px);aspect-ratio:1;background:var(--logo) center/contain no-repeat;filter:drop-shadow(8px 8px 0 color-mix(in srgb,var(--secondary) 30%,transparent))}
+.logo-main .cf{position:absolute;width:22px;height:22px;border:2px solid var(--line-strong);z-index:1}
+.logo-main .cf.tl{top:16px;left:16px;border-right:0;border-bottom:0}
+.logo-main .cf.tr{top:16px;right:16px;border-left:0;border-bottom:0}
+.logo-main .cf.bl{bottom:16px;left:16px;border-right:0;border-top:0}
+.logo-main .cf.br{bottom:16px;right:16px;border-left:0;border-top:0}
+.logo-side{display:grid;grid-template-rows:1fr 1fr;background:var(--line);gap:1px}
+.logo-tile{display:grid;place-items:center;padding:28px;position:relative;min-height:130px}
+.logo-tile .mark{width:clamp(70px,10vw,96px);height:clamp(70px,10vw,96px);background-repeat:no-repeat;background-position:center;background-size:contain}
+.logo-tile--dark{background:var(--bg)}.logo-tile--dark .mark{background-image:var(--logo)}
+.logo-tile--light{background:var(--primary)}.logo-tile--light .mark{background-image:var(--logo)}
+.logo-tile .tlabel{position:absolute;top:13px;left:15px;font-family:var(--mono);font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.logo-tile--dark .tlabel{color:var(--text-faint)}
+.logo-tile--light .tlabel{color:color-mix(in srgb,var(--bg) 58%,transparent)}
+.logo-lockup{margin-top:1px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;gap:clamp(16px,3vw,34px);padding:clamp(26px,4vw,46px)}
+.logo-lockup .mark{width:clamp(46px,7vw,84px);height:clamp(46px,7vw,84px);background:var(--logo) center/contain no-repeat;flex-shrink:0}
+.logo-lockup .word{font-family:var(--font);font-weight:800;text-transform:uppercase;font-size:clamp(1.7rem,5.4vw,3.4rem);letter-spacing:-.035em;color:var(--text);line-height:1}
+.logo-lockup .word sup{color:var(--secondary);font-size:.36em;vertical-align:super;margin-left:.04em}
+.logo-lockup .div{width:1px;align-self:stretch;background:var(--line)}
+.logo-lockup .note{font-family:var(--mono);font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-faint);max-width:24ch;line-height:1.8}
+@media(max-width:640px){.logo-lockup .div,.logo-lockup .note{display:none}}
+.logo-notes{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-top:0}
+@media(max-width:600px){.logo-notes{grid-template-columns:1fr}}
+.logo-note{background:var(--bg);padding:clamp(22px,3vw,34px);display:flex;flex-direction:column;gap:18px}
+.logo-note h4{font-family:var(--mono);font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint)}
+.clear-demo{position:relative;width:132px;height:132px;border:1px dashed var(--line-strong);display:grid;place-items:center}
+.clear-demo .mark{width:64px;height:64px;background:var(--logo) center/contain no-repeat}
+.clear-demo .x{position:absolute;bottom:6px;right:8px;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;color:var(--secondary)}
+.size-row{display:flex;align-items:flex-end;gap:22px}
+.size-row div{display:flex;flex-direction:column;align-items:center;gap:8px}
+.size-row .mark{background:var(--logo) center/contain no-repeat}
+.size-row span{font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;color:var(--text-faint)}
+.size-row .s32{width:32px;height:32px}.size-row .s24{width:24px;height:24px}.size-row .s16{width:16px;height:16px}
+
+/* ===== PALETTE ===== */
+.pal-group{margin-bottom:44px}
+.pal-group h3{font-family:var(--mono);font-size:.74rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--text-faint);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.swatch{background:var(--bg);padding:0}
+.swatch .chip{height:120px;position:relative}
+.swatch .meta{padding:14px 16px;display:flex;flex-direction:column;gap:4px;background:var(--surface)}
+.swatch .role{font-family:var(--font);font-weight:700;font-size:.9rem;color:var(--text)}
+.swatch .hex{font-family:var(--mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim)}
+.swatch .var{font-family:var(--mono);font-size:.66rem;letter-spacing:.04em;color:var(--text-faint)}
+
+/* ===== TYPOGRAPHY ===== */
+.type-grid{display:grid;gap:1px;background:var(--line);border:1px solid var(--line)}
+.type-row{background:var(--bg);padding:clamp(22px,3vw,34px);display:grid;grid-template-columns:180px 1fr;gap:24px;align-items:baseline}
+@media(max-width:680px){.type-row{grid-template-columns:1fr;gap:12px}}
+.type-label{font-family:var(--mono);font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);line-height:1.6}
+.type-label span{display:block;color:var(--text-dim)}
+.sp-display{font-family:var(--font);font-weight:800;text-transform:uppercase;font-size:clamp(2rem,5vw,3.4rem);line-height:.9;letter-spacing:-.04em;color:var(--text)}
+.sp-h2{font-family:var(--font);font-weight:800;text-transform:uppercase;font-size:1.8rem;line-height:1;letter-spacing:-.03em;color:var(--text)}
+.sp-body{font-family:var(--font);font-weight:400;font-size:1.05rem;line-height:1.6;color:var(--text-dim);max-width:56ch}
+.sp-mono{font-family:var(--mono);font-weight:700;font-size:.82rem;letter-spacing:.16em;text-transform:uppercase;color:var(--primary)}
+.font-cards{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:40px}
+@media(max-width:680px){.font-cards{grid-template-columns:1fr}}
+.font-card{background:var(--surface);padding:clamp(24px,3vw,36px);display:flex;flex-direction:column;gap:14px}
+.font-card .fc-tag{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--secondary)}
+.font-card .fc-name{font-weight:800;font-size:1.5rem;letter-spacing:-.02em;color:var(--text)}
+.font-card.mono .fc-name{font-family:var(--mono);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.font-card .fc-glyphs{font-size:1.7rem;color:var(--text);letter-spacing:.02em;word-break:break-word}
+.font-card.mono .fc-glyphs{font-family:var(--mono)}
+.font-card .fc-use{font-size:.92rem;color:var(--text-dim)}
+
+/* ===== GEOMETRY ===== */
+.geo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.geo-card{background:var(--bg);padding:clamp(24px,3vw,34px);display:flex;flex-direction:column;gap:18px;min-height:220px}
+.geo-card h4{font-family:var(--mono);font-size:.72rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint)}
+.geo-card p{font-size:.92rem;color:var(--text-dim)}
+.geo-demo{flex:1;display:grid;place-items:center;min-height:90px}
+.demo-hard{width:120px;height:64px;border:2px solid var(--primary);background:var(--surface)}
+.demo-shadow{width:120px;height:64px;border:2px solid var(--primary);background:var(--primary);box-shadow:6px 6px 0 0 var(--secondary)}
+.demo-hair{width:150px;height:70px;border:1px solid var(--line);position:relative;display:grid;place-items:center}
+.demo-hair::before{content:"";position:absolute;inset:8px;border:1px solid var(--line-strong)}
+.demo-corner{width:120px;height:70px;position:relative}
+.demo-corner span{position:absolute;width:18px;height:18px;border:2px solid var(--secondary)}
+.demo-corner span:nth-child(1){top:0;left:0;border-right:0;border-bottom:0}
+.demo-corner span:nth-child(2){top:0;right:0;border-left:0;border-bottom:0}
+.demo-corner span:nth-child(3){bottom:0;left:0;border-right:0;border-top:0}
+.demo-corner span:nth-child(4){bottom:0;right:0;border-left:0;border-top:0}
+
+/* ===== COMPONENTS ===== */
+.comp-block{margin-bottom:44px}
+.comp-block>h3{font-family:var(--mono);font-size:.74rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--text-faint);margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.comp-stage{background:var(--surface);border:1px solid var(--line);padding:clamp(28px,4vw,48px);display:flex;flex-wrap:wrap;gap:18px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:.82rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:16px 26px;border:2px solid var(--primary);transition:transform .08s ease,background .18s ease,box-shadow .15s ease}
+.btn svg{width:16px;height:16px}
+.btn--primary{background:var(--primary);color:var(--bg);box-shadow:6px 6px 0 0 var(--secondary)}
+.btn--primary:hover{background:var(--secondary);border-color:var(--secondary);box-shadow:3px 3px 0 0 var(--primary)}
+.btn--primary:active{transform:translate(3px,3px);box-shadow:0 0 0 0 var(--primary)}
+.btn--ghost{background:transparent;color:var(--text);border-color:var(--line-strong)}
+.btn--ghost:hover{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 10%,transparent)}
+.btn--ghost:active{transform:translateY(2px)}
+.chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:9px 14px;border:1px solid var(--line-strong);color:var(--text);transition:background .18s ease}
+.chip svg{width:14px;height:14px}
+.chip:hover{background:color-mix(in srgb,var(--primary) 12%,transparent)}
+.chip--solid{background:var(--primary);color:var(--bg);border-color:var(--primary)}
+.status{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:7px 12px;border:1px solid}
+.status .dot{width:8px;height:8px}
+.status--ok{color:var(--green);border-color:color-mix(in srgb,var(--green) 40%,transparent)}
+.status--ok .dot{background:var(--green)}
+.status--warn{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 40%,transparent)}
+.status--warn .dot{background:var(--amber)}
+.status--err{color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,transparent)}
+.status--err .dot{background:var(--red)}
+
+.stat-cluster{display:grid;grid-template-columns:repeat(3,minmax(0,max-content));border:1px solid var(--line);width:max-content;max-width:100%}
+.stat-cluster div{display:flex;flex-direction:column;gap:6px;padding:16px 26px;border-right:1px solid var(--line)}
+.stat-cluster div:last-child{border-right:0}
+.stat-k{font-family:var(--mono);font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint)}
+.stat-v{font-family:var(--font);font-weight:800;font-size:clamp(1.5rem,3vw,2.2rem);line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
+
+.bento{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);counter-reset:b}
+@media(max-width:720px){.bento{grid-template-columns:1fr 1fr}}
+@media(max-width:460px){.bento{grid-template-columns:1fr}}
+.bento-card{background:var(--bg);padding:clamp(24px,2.6vw,36px);display:flex;flex-direction:column;gap:14px;counter-increment:b;transition:background .2s ease}
+.bento-card:hover{background:var(--surface)}
+.bento-card::before{content:"0" counter(b);font-family:var(--mono);font-size:.72rem;font-weight:700;letter-spacing:.1em;color:var(--secondary)}
+.bento-icon{width:46px;height:46px;display:grid;place-items:center;border:1px solid var(--line-strong);color:var(--primary)}
+.bento-icon svg{width:22px;height:22px}
+.bento-card h4{font-family:var(--font);font-weight:800;font-size:1.06rem;color:var(--text);text-transform:uppercase;letter-spacing:-.01em}
+.bento-card p{font-size:.9rem;color:var(--text-dim)}
+
+.tape{overflow:hidden;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--surface);padding:14px 0;margin-top:2px}
+.tape-track{display:flex;gap:44px;width:max-content;font-family:var(--mono);font-size:.8rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--text-dim);animation:marquee 34s linear infinite;padding-left:44px}
+.tape-track span{position:relative}
+.tape-track span::before{content:"+";position:absolute;left:-26px;color:var(--secondary);opacity:.6}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ===== TERMINAL CONSOLE (real) ===== */
+.terminal-window{position:relative;background:var(--surface);border:1px solid var(--line-strong);overflow:hidden}
+.terminal-scan{position:absolute;inset:0;z-index:3;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(0,0,0,.22) 3px,transparent 4px);opacity:.6}
+.terminal-header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line-strong);background:var(--surface-2)}
+.terminal-dots{display:inline-flex;gap:7px}
+.t-dot{width:9px;height:9px;border:1px solid var(--line-strong)}
+.t-dot--red{background:var(--secondary)}
+.t-dot--pink{background:var(--tertiary)}
+.t-dot--purple{background:var(--primary)}
+.terminal-path{font-family:var(--mono);font-size:.74rem;letter-spacing:.06em;color:var(--text-dim);flex:1}
+.terminal-header svg{width:14px;height:14px;color:var(--text-faint)}
+.terminal-body{position:relative;z-index:1;padding:16px;min-height:280px;display:flex;flex-direction:column;gap:2px;font-family:var(--mono);font-size:.8rem}
+.t-row{display:grid;grid-template-columns:auto auto 1fr auto;gap:12px;align-items:center;padding:8px 6px;border-bottom:1px solid var(--grid-line)}
+.t-time{color:var(--text-faint);font-size:.74rem}
+.t-tag{font-weight:700;font-size:.7rem;letter-spacing:.08em;padding:2px 8px;border:1px solid currentColor}
+.t-tag--snipe{color:var(--secondary)}
+.t-tag--alert{color:var(--tertiary)}
+.t-tag--scan{color:var(--text-faint)}
+.t-text{color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-target{color:var(--primary)}
+.t-target svg{width:13px;height:13px}
+.terminal-fade{position:absolute;left:0;right:0;bottom:0;height:60px;z-index:2;background:linear-gradient(to top,var(--surface),transparent);pointer-events:none}
+@media(max-width:600px){.terminal-body{min-height:210px;font-size:.74rem}.t-row{grid-template-columns:auto minmax(0,1fr) auto;gap:8px;padding:7px 4px}.t-time{display:none}}
+
+/* ===== APP CONTROLS & BADGES (real) ===== */
+.toggle-input{display:none}
+.toggle-track{width:32px;height:17px;border-radius:9px;background:var(--surface-3);border:1px solid var(--line-strong);position:relative;transition:.2s ease;flex-shrink:0}
+.toggle-track::after{content:"";width:11px;height:11px;border-radius:50%;background:var(--text-faint);position:absolute;top:2px;left:2px;transition:.2s ease}
+.toggle-input:checked ~ .toggle-track{background:var(--primary);border-color:var(--primary)}
+.toggle-input:checked ~ .toggle-track::after{transform:translateX(15px);background:#fff}
+.adv-toggle{display:inline-flex;align-items:center;gap:9px;padding:9px 14px;border:1px solid var(--line-strong);background:var(--surface-2);cursor:pointer;user-select:none;transition:.2s ease}
+.adv-toggle:hover{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 12%,transparent)}
+.adv-toggle-txt{font-size:11px;font-family:var(--mono);letter-spacing:.6px;text-transform:uppercase;color:var(--text-dim)}
+.adv-toggle .toggle-input:checked ~ .adv-toggle-txt{color:var(--primary)}
+.sb-badge{background:var(--red);color:#000;font-size:9px;padding:2px 7px;border-radius:10px;font-family:var(--mono);font-weight:700;letter-spacing:.05em}
+.sb-badge.green{background:var(--green);color:#000}
+.info-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;font-size:11px;font-family:var(--mono);background:var(--surface-2);border:1px solid var(--line);color:var(--text-dim)}
+.info-chip b{color:var(--text);font-weight:700}
+
+/* ===== FISH (pez real de la landing) ===== */
+.fish-stage{position:relative;overflow:hidden;border:1px solid var(--line-strong);background:var(--surface);min-height:clamp(300px,44vw,470px);margin-bottom:40px;background-image:linear-gradient(to right,var(--grid-line) 1px,transparent 1px),linear-gradient(to bottom,var(--grid-line) 1px,transparent 1px);background-size:44px 44px}
+.fish-stage .cf{position:absolute;width:22px;height:22px;border:2px solid var(--line-strong);z-index:4}
+.fish-stage .cf.tl{top:16px;left:16px;border-right:0;border-bottom:0}
+.fish-stage .cf.tr{top:16px;right:16px;border-left:0;border-bottom:0}
+.fish-stage .cf.bl{bottom:16px;left:16px;border-right:0;border-top:0}
+.fish-stage .cf.br{bottom:16px;right:16px;border-left:0;border-top:0}
+.fish-scan{position:absolute;inset:0;z-index:5;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(0,0,0,.18) 3px,transparent 4px);opacity:.5}
+.fish-label{position:absolute;left:18px;bottom:16px;z-index:6;font-family:var(--mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint)}
+.vd-fish{position:absolute;top:0;left:0;width:clamp(170px,24vw,240px);pointer-events:none;z-index:3;will-change:transform;opacity:.95}
+#vd-fish-canvas{display:block;width:100%;height:auto;background:transparent;filter:grayscale(1) sepia(1) hue-rotate(225deg) saturate(2.4) brightness(1.15)}
+#vd-fish-video{position:absolute;top:0;left:0;width:2px;height:2px;opacity:0;pointer-events:none}
+.vd-fish--fallback #vd-fish-video{position:static;width:100%;height:auto;opacity:1;filter:grayscale(1) sepia(1) hue-rotate(225deg) saturate(2.4) brightness(1.15)}
+.fish-notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.fish-note{background:var(--bg);padding:clamp(20px,2.6vw,30px);display:flex;flex-direction:column;gap:10px}
+.fish-note h4{font-family:var(--mono);font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--secondary)}
+.fish-note p{font-size:.9rem;color:var(--text-dim);line-height:1.6}
+
+/* ===== MOTION ===== */
+.motion-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.motion-card{background:var(--bg);padding:clamp(22px,2.6vw,32px);display:flex;flex-direction:column;gap:16px;min-height:180px}
+.motion-card h4{font-family:var(--font);font-weight:800;text-transform:uppercase;font-size:1rem;letter-spacing:-.01em;color:var(--text)}
+.motion-card p{font-size:.88rem;color:var(--text-dim)}
+.motion-card .spec{font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;color:var(--text-faint);margin-top:auto}
+.mdemo{height:60px;display:grid;place-items:center;position:relative;overflow:hidden;border:1px dashed var(--line)}
+.mdot{width:10px;height:10px;background:var(--secondary);animation:ping 2.6s cubic-bezier(0,0,.2,1) infinite}
+.mscan::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--secondary);opacity:.6;animation:mscan 2.6s linear infinite}
+@keyframes mscan{0%{top:0}100%{top:100%}}
+.mcaret{font-family:var(--font);font-weight:800;text-transform:uppercase;color:var(--text);letter-spacing:-.02em}
+.mcaret::after{content:"";display:inline-block;width:.4em;height:.9em;background:var(--secondary);margin-left:.1em;vertical-align:-.08em;animation:caret 1.05s steps(1) infinite}
+.mspin{width:44px;height:44px;border:1px dashed var(--line-strong);border-radius:50%;animation:spin 8s linear infinite}
+
+/* ===== ICONOGRAPHY ===== */
+.icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.icon-cell{background:var(--bg);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:background .18s ease}
+.icon-cell:hover{background:var(--surface)}
+.icon-cell svg{width:26px;height:26px;color:var(--primary)}
+.icon-cell span{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint)}
+
+/* ===== DO / DONT ===== */
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line)}
+@media(max-width:680px){.rules{grid-template-columns:1fr}}
+.rule-col{background:var(--bg);padding:clamp(24px,3vw,36px)}
+.rule-col h3{font-family:var(--font);font-weight:800;text-transform:uppercase;font-size:1.1rem;letter-spacing:-.01em;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.rule-col--do h3{color:var(--green)}
+.rule-col--dont h3{color:var(--red)}
+.rule-col li{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:.94rem;color:var(--text-dim)}
+.rule-col li:last-child{border-bottom:0}
+.rule-col li svg{width:16px;height:16px;flex-shrink:0;margin-top:3px}
+.rule-col--do li svg{color:var(--green)}
+.rule-col--dont li svg{color:var(--red)}
+
+/* ===== FOOTER ===== */
+.site-footer{border-top:1px solid var(--line-strong);background:var(--surface);padding:clamp(44px,6vw,64px) 0 40px}
+.foot-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:24px;align-items:flex-end;margin-bottom:36px}
+.foot-title{font-family:var(--font);font-weight:800;text-transform:uppercase;font-size:clamp(1.6rem,3.4vw,2.6rem);line-height:.96;letter-spacing:-.03em;color:var(--text);max-width:16ch}
+.foot-meta{font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);text-align:right;line-height:2}
+.foot-bar{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;padding-top:22px;border-top:1px solid var(--line);font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint)}
+
+.cursor-orb{position:fixed;top:0;left:0;width:26px;height:26px;border:1px solid var(--secondary);pointer-events:none;z-index:9997;transform:translate(-50%,-50%);opacity:0;transition:opacity .3s ease;mix-blend-mode:screen}
+.cursor-orb::before{content:"";position:absolute;inset:10px;background:var(--secondary)}
+
+[data-lang="en"] [data-es]{display:none}
+[data-lang="es"] [data-en]{display:none}
+
+/* ===== TECH SHOWCASE ===== */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));border:1px solid var(--line);border-bottom:0}
+.metric{padding:26px 22px;border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
+.metric:last-child{border-right:0}
+.metric-v{font-family:var(--mono);font-size:clamp(1.6rem,3.4vw,2.4rem);font-weight:700;color:var(--primary);letter-spacing:-.02em;line-height:1}
+.metric-k{margin-top:10px;font-family:var(--mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--text-faint)}
+
+.stack{display:grid;gap:0;border:1px solid var(--line)}
+.layer{display:grid;grid-template-columns:150px 1fr;gap:0;border-bottom:1px solid var(--line);transition:background .25s ease}
+.layer:last-child{border-bottom:0}
+.layer:hover{background:rgba(205,189,255,.035)}
+.layer-tag{padding:20px 18px;border-right:1px solid var(--line);font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--tertiary);display:flex;align-items:flex-start;gap:8px}
+.layer-tag svg{width:14px;height:14px;flex:0 0 14px;margin-top:1px}
+.layer-body{padding:20px 22px}
+.layer-h{font-weight:700;font-size:1rem;letter-spacing:-.01em;margin-bottom:6px}
+.layer-p{font-size:.9rem;color:var(--text-dim);line-height:1.6}
+.layer-p code,.inline-c{font-family:var(--mono);font-size:.82em;color:var(--primary);background:rgba(205,189,255,.08);padding:1px 5px;border:1px solid rgba(205,189,255,.16)}
+@media(max-width:640px){.layer{grid-template-columns:1fr}.layer-tag{border-right:0;border-bottom:1px solid var(--line)}}
+
+.snip{border:1px solid var(--line);background:rgba(0,0,0,.24);margin-top:22px}
+.snip-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-faint)}
+.snip-head b{color:var(--tertiary);font-weight:400}
+.snip pre{margin:0;padding:16px 14px;overflow-x:auto;font-family:var(--mono);font-size:.78rem;line-height:1.75;color:var(--text-dim)}
+.snip .kw{color:var(--secondary)}
+.snip .fn{color:var(--primary)}
+.snip .nu{color:var(--green)}
+.snip .cm{color:var(--text-faint)}
+
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));border:1px solid var(--line)}
+.step{position:relative;padding:24px 20px;border-right:1px solid var(--line)}
+.step:last-child{border-right:0}
+.step-n{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;color:var(--primary);margin-bottom:12px}
+.step-h{font-weight:700;font-size:.95rem;margin-bottom:6px}
+.step-p{font-size:.84rem;color:var(--text-dim);line-height:1.6}
+@media(max-width:760px){.step{border-right:0;border-bottom:1px solid var(--line)}.step:last-child{border-bottom:0}}
+
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0;border:1px solid var(--line)}
+.tech-card{padding:24px 22px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transition:background .25s ease}
+.tech-card:hover{background:rgba(255,169,252,.04)}
+.tech-h{display:flex;align-items:center;gap:9px;font-weight:700;font-size:.98rem;margin-bottom:9px}
+.tech-h svg{width:16px;height:16px;color:var(--secondary)}
+.tech-p{font-size:.87rem;color:var(--text-dim);line-height:1.62}
+.tech-p code{font-family:var(--mono);font-size:.82em;color:var(--primary)}
+
+.spec-list{margin-top:20px;display:flex;flex-wrap:wrap;gap:8px}
+.spec{font-family:var(--mono);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);border:1px solid var(--line);padding:6px 11px}
+.spec b{color:var(--primary);font-weight:400}
+
+.map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));border:1px solid var(--line);border-right:0;border-bottom:0}
+.map-cell{padding:14px 12px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);font-family:var(--mono);font-size:.72rem;color:var(--text-dim);transition:color .2s ease,background .2s ease}
+.map-cell:hover{color:var(--primary);background:rgba(205,189,255,.05)}
+.map-cell b{display:block;color:var(--tertiary);font-weight:400;font-size:.62rem;letter-spacing:.1em;margin-bottom:3px}
+
+</style>
+</head>
+<body data-lang="es">
+
+<div class="cursor-orb" id="orb"></div>
+
+<header class="site-header">
+  <div class="top-nav">
+    <a class="brand" href="#top">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-text">VintHook</span>
+    </a>
+    <div class="nav-right">
+      <div class="lang-toggle" id="lang">
+        <button data-set="es" class="active">ES</button>
+        <button data-set="en">EN</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"><div class="hero-grid"></div></div>
+    <div class="hero-scope" aria-hidden="true">
+      <div class="scope-ring"></div>
+      <div class="scope-ring scope-ring--mid"></div>
+      <div class="scope-ring scope-ring--inner"></div>
+      <div class="scope-cross"></div>
+    </div>
+    <div class="hero-ping" aria-hidden="true"></div>
+    <span class="hero-frame hf-tl"></span>
+    <span class="hero-frame hf-tr"></span>
+    <span class="hero-frame hf-bl"></span>
+    <span class="hero-frame hf-br"></span>
+
+    <div class="hero-content">
+      <div class="hero-logo" role="img" aria-label="VintHook"></div>
+      <h1 class="hero-title" data-es>Un Monolito<br><em>Deliberado</em></h1>
+      <h1 class="hero-title" data-en>A Deliberate<br><em>Monolith</em></h1>
+      <p class="hero-sub" data-es>La ingeniería de VintHook: un backend Flask de un solo archivo, un motor de búsqueda que abre decenas de conexiones a la vez contra 26 mercados de Vinted, estadística de precios que descarta lo que no cuadra, y un hilo daemon que sigue trabajando cuando cierras la pestaña. Sin microservicios, sin build step, sin capas que nadie pidió.</p>
+      <p class="hero-sub" data-en>The engineering behind VintHook: a single-file Flask backend, a search engine that opens dozens of connections at once against 26 Vinted markets, price statistics that throw out whatever doesn't add up, and a daemon thread that keeps working after you close the tab. No microservices, no build step, no layers nobody asked for.</p>
+    </div>
+    <div class="scroll-hint">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+    </div>
+  </section>
+
+  <!-- 00 ARQUITECTURA -->
+  <section id="stack">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-index">00 / <span data-es>Arquitectura</span><span data-en>Architecture</span></span>
+        <h2 class="sec-title" data-es>Todo en un Archivo</h2>
+        <h2 class="sec-title" data-en>Everything in One File</h2>
+        <p class="sec-desc" data-es>El backend entero vive en <code class="inline-c">app.py</code>. Es una decisión, no un descuido: un solo proceso, un solo despliegue, cero latencia entre módulos. Cuando algo falla, el stack trace apunta a un archivo.</p>
+        <p class="sec-desc" data-en>The whole backend lives in <code class="inline-c">app.py</code>. That's a decision, not an oversight: one process, one deploy, zero latency between modules. When something breaks, the stack trace points at one file.</p>
+      </div>
+
+      <div class="metrics">
+        <div class="metric"><div class="metric-v">5.612</div><div class="metric-k"><span data-es>Lineas en app.py</span><span data-en>Lines in app.py</span></div></div>
+        <div class="metric"><div class="metric-v">86</div><div class="metric-k"><span data-es>Rutas Flask</span><span data-en>Flask routes</span></div></div>
+        <div class="metric"><div class="metric-v">26</div><div class="metric-k"><span data-es>Mercados</span><span data-en>Markets</span></div></div>
+        <div class="metric"><div class="metric-v">0</div><div class="metric-k"><span data-es>Pasos de build</span><span data-en>Build steps</span></div></div>
+      </div>
+
+      <div class="stack" style="margin-top:22px">
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 9h6v6H9z"/></svg>Frontend</div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Jinja2 y JavaScript sin frameworks</div>
+            <div class="layer-h" data-en>Jinja2 and framework-free JavaScript</div>
+            <div class="layer-p" data-es>Plantillas servidas por Flask y JS plano. No hay bundler, no hay <code>node_modules</code>, no hay paso de compilación. Se edita un archivo, se recarga y ya está.</div>
+            <div class="layer-p" data-en>Templates served by Flask and plain JS. No bundler, no <code>node_modules</code>, no compile step. Edit a file, reload, done.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/></svg>API</div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>86 rutas Flask</div>
+            <div class="layer-h" data-en>86 Flask routes</div>
+            <div class="layer-p" data-es>Vistas HTML y endpoints JSON conviven en el mismo proceso. Autenticación por sesión con cookie firmada; el frontend consulta <code>/api/*</code> con <code>fetch</code>.</div>
+            <div class="layer-p" data-en>HTML views and JSON endpoints live in the same process. Session auth via signed cookie; the frontend hits <code>/api/*</code> with <code>fetch</code>.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>Motor</div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Busqueda concurrente</div>
+            <div class="layer-h" data-en>Concurrent search</div>
+            <div class="layer-p" data-es>Cliente HTTP propio contra la API de Vinted, con sesión anónima por país y rotación de cabeceras. Async cuando <code>aiohttp</code> está disponible; hilos cuando no.</div>
+            <div class="layer-p" data-en>A custom HTTP client against Vinted's API, with a per-country anonymous session and header rotation. Async when <code>aiohttp</code> is available; threads when it isn't.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>Datos</div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>PostgreSQL con JSONB</div>
+            <div class="layer-h" data-en>PostgreSQL with JSONB</div>
+            <div class="layer-p" data-es>Tres tablas: <code>usuarios</code>, <code>configuracion</code> y <code>autopilot_presets</code>. La configuración va en una columna <code>JSONB</code>, así que añadir un ajuste no obliga a migrar el esquema.</div>
+            <div class="layer-p" data-en>Three tables: <code>usuarios</code>, <code>configuracion</code> and <code>autopilot_presets</code>. Config lives in a <code>JSONB</code> column, so adding a setting doesn't force a schema migration.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>AutoPilot</div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Hilo daemon permanente</div>
+            <div class="layer-h" data-en>Permanent daemon thread</div>
+            <div class="layer-p" data-es>Un único worker en segundo plano atiende a todos los usuarios activos. Sigue vivo aunque nadie tenga el navegador abierto.</div>
+            <div class="layer-p" data-en>A single background worker serves every active user. It stays alive even when nobody has a browser open.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 01 MOTOR -->
+  <section id="engine">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-index">01 / <span data-es>Motor</span><span data-en>Engine</span></span>
+        <h2 class="sec-title" data-es>Dos Motores, Uno de Repuesto</h2>
+        <h2 class="sec-title" data-en>Two Engines, One a Spare</h2>
+        <p class="sec-desc" data-es>Buscar en Vinted no es una petición: son decenas, contra varios países y varias páginas de resultados a la vez. La búsqueda turbo detecta en arranque si <code class="inline-c">aiohttp</code> está instalado. Si lo está, lanza todas las peticiones en un único bucle de eventos. Si no, cae a un pool de hilos y nadie se entera.</p>
+        <p class="sec-desc" data-en>Searching Vinted isn't one request: it's dozens, across several countries and several result pages at once. Turbo search checks at boot whether <code class="inline-c">aiohttp</code> is installed. If it is, every request goes out on a single event loop. If not, it falls back to a thread pool and nobody notices.</p>
+      </div>
+
+      <div class="flow">
+        <div class="step">
+          <div class="step-n">01</div>
+          <div class="step-h" data-es>Plan de peticiones</div>
+          <div class="step-h" data-en>Request plan</div>
+          <div class="step-p" data-es>Se construye la lista de tareas: cada país, cada página, cada variante de la consulta.</div>
+          <div class="step-p" data-en>Build the task list: every country, every page, every query variant.</div>
+        </div>
+        <div class="step">
+          <div class="step-n">02</div>
+          <div class="step-h" data-es>Disparo en paralelo</div>
+          <div class="step-h" data-en>Parallel fire</div>
+          <div class="step-p" data-es>Todas salen a la vez, con techo de 30 conexiones y 5 por host para no castigar el origen.</div>
+          <div class="step-p" data-en>They all go out at once, capped at 30 connections and 5 per host so the origin isn't hammered.</div>
+        </div>
+        <div class="step">
+          <div class="step-n">03</div>
+          <div class="step-h" data-es>Corte por tiempo</div>
+          <div class="step-h" data-en>Time cutoff</div>
+          <div class="step-p" data-es>16 segundos de techo total y 6 para conectar. Lo que no llega, no bloquea al resto.</div>
+          <div class="step-p" data-en>16 seconds total ceiling, 6 to connect. Whatever doesn't arrive doesn't block the rest.</div>
+        </div>
+        <div class="step">
+          <div class="step-n">04</div>
+          <div class="step-h" data-es>Fusion y limpieza</div>
+          <div class="step-h" data-en>Merge and clean</div>
+          <div class="step-p" data-es>Se juntan los resultados, se deduplican por id y pasan al filtrado estadístico.</div>
+          <div class="step-p" data-en>Results are merged, deduplicated by id, and handed to the statistical filter.</div>
+        </div>
+      </div>
+
+      <div class="snip">
+        <div class="snip-head"><span>app.py</span><b><span data-es>ruta rapida</span><span data-en>fast path</span></b></div>
+        <pre><span class="kw">async def</span> <span class="fn">_aiohttp_turbo</span>(task_list):
+    connector = aiohttp.TCPConnector(ssl=<span class="kw">False</span>, limit=<span class="nu">30</span>, limit_per_host=<span class="nu">5</span>)
+    timeout   = aiohttp.ClientTimeout(total=<span class="nu">16</span>, connect=<span class="nu">6</span>)</pre>
+      </div>
+
+      <div class="snip">
+        <div class="snip-head"><span>app.py</span><b><span data-es>plan B</span><span data-en>plan B</span></b></div>
+        <pre>max_workers = <span class="fn">min</span>(<span class="fn">len</span>(task_list), <span class="nu">12</span>)
+<span class="kw">with</span> ThreadPoolExecutor(max_workers=max_workers) <span class="kw">as</span> executor:</pre>
+      </div>
+
+      <div class="spec-list">
+        <span class="spec"><b>aiohttp</b> · <span data-es>bucle unico</span><span data-en>single loop</span></span>
+        <span class="spec"><b>limit</b> · 30</span>
+        <span class="spec"><b>limit_per_host</b> · 5</span>
+        <span class="spec"><b>timeout</b> · 16s / 6s</span>
+        <span class="spec"><b>fallback</b> · 12 <span data-es>hilos</span><span data-en>threads</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 ESTADISTICA -->
+  <section id="stats">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-index">02 / <span data-es>Estadistica</span><span data-en>Statistics</span></span>
+        <h2 class="sec-title" data-es>El Precio Justo</h2>
+        <h2 class="sec-title" data-en>What It's Actually Worth</h2>
+        <p class="sec-desc" data-es>Para saber si un anuncio es una oportunidad hay que saber cuánto vale de verdad. La media miente: basta con un artículo puesto a 900 euros por error para arruinarla. Se limpian los extremos por rango intercuartílico y se trabaja con la mediana.</p>
+        <p class="sec-desc" data-en>To know whether a listing is a deal you first need to know what the thing is really worth. The mean lies: one item mispriced at 900 euros is enough to wreck it. Outliers get cut with the interquartile range and the median does the work.</p>
+      </div>
+
+      <div class="snip">
+        <div class="snip-head"><span>app.py</span><b>clean_outliers_iqr</b></div>
+        <pre><span class="kw">def</span> <span class="fn">clean_outliers_iqr</span>(values):
+    <span class="cm">"""Remove outliers using Interquartile Range method."""</span>
+    <span class="kw">if</span> <span class="fn">len</span>(values) &lt; <span class="nu">4</span>:
+        <span class="kw">return</span> values
+    s = <span class="fn">sorted</span>(values)
+    n = <span class="fn">len</span>(s)
+    q1 = s[n // <span class="nu">4</span>]
+    q3 = s[(<span class="nu">3</span> * n) // <span class="nu">4</span>]
+    iqr = q3 - q1
+    lower = q1 - <span class="nu">3.0</span> * iqr
+    upper = q3 + <span class="nu">3.0</span> * iqr
+    cleaned = [v <span class="kw">for</span> v <span class="kw">in</span> values <span class="kw">if</span> lower &lt;= v &lt;= upper]
+    <span class="kw">return</span> cleaned <span class="kw">if</span> cleaned <span class="kw">else</span> values</pre>
+      </div>
+
+      <div class="tech-grid" style="margin-top:22px">
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg><span data-es>Vallas anchas</span><span data-en>Wide fences</span></div>
+          <div class="tech-p" data-es>El multiplicador es <code>3.0</code>, no el clásico <code>1.5</code>. En ropa de segunda mano la dispersión real es enorme, y un corte agresivo se cargaría artículos legítimos. Solo se descarta lo absurdo.</div>
+          <div class="tech-p" data-en>The multiplier is <code>3.0</code>, not the textbook <code>1.5</code>. Second-hand clothing genuinely spreads that wide, and an aggressive cut would throw out legitimate listings. Only the absurd gets dropped.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span data-es>Nunca devuelve vacio</span><span data-en>Never returns empty</span></div>
+          <div class="tech-p" data-es>Si el filtro se lleva todo por delante, la función devuelve la lista original. Un dato sucio es mejor que ningún dato, y quedarse a cero rompería el cálculo de abajo.</div>
+          <div class="tech-p" data-en>If the filter wipes everything out, the function returns the original list. Dirty data beats no data, and hitting zero would break every calculation downstream.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg><span data-es>Cubos dinamicos</span><span data-en>Dynamic buckets</span></div>
+          <div class="tech-p" data-es>El histograma de precios ajusta el ancho del cubo a la mediana: 2 euros por debajo de 20, 5 hasta 50, 10 hasta 150 y 20 a partir de ahí. Un cubo fijo aplastaría los rangos bajos.</div>
+          <div class="tech-p" data-en>The price histogram scales bucket width to the median: 2 euros below 20, 5 up to 50, 10 up to 150, and 20 beyond that. A fixed bucket would flatten the low ranges.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span data-es>Coincidencia difusa</span><span data-en>Fuzzy matching</span></div>
+          <div class="tech-p" data-es>Los títulos en Vinted los escriben personas: faltas, orden aleatorio, palabras de más. Se comparan con <code>token_set_ratio</code> y umbral 75. El modo estricto desactiva la tolerancia y exige todas las palabras.</div>
+          <div class="tech-p" data-en>Vinted titles are written by humans: typos, random word order, filler. They're compared with <code>token_set_ratio</code> at a threshold of 75. Strict mode turns tolerance off and demands every word.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 AUTOPILOT -->
+  <section id="autopilot">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-index">03 / AutoPilot</span>
+        <h2 class="sec-title" data-es>El Hilo Que Nunca Duerme</h2>
+        <h2 class="sec-title" data-en>The Thread That Never Sleeps</h2>
+        <p class="sec-desc" data-es>Un solo hilo daemon atiende a todos los usuarios con AutoPilot activo. Despierta cada diez segundos, mira a quién le toca ciclo según su intervalo, lo ejecuta y vuelve a dormirse. Un fallo en el ciclo de un usuario se registra y se sigue: nunca tumba el worker.</p>
+        <p class="sec-desc" data-en>One daemon thread serves every user with AutoPilot on. It wakes every ten seconds, checks whose cycle is due based on their interval, runs it, and goes back to sleep. A failure in one user's cycle is logged and skipped: it never takes the worker down.</p>
+      </div>
+
+      <div class="tech-grid">
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span data-es>Tic de diez segundos</span><span data-en>Ten-second tick</span></div>
+          <div class="tech-p" data-es>El bucle no gira en vacío quemando CPU: duerme diez segundos entre pasadas y reparte los ciclos según el intervalo que cada usuario haya configurado.</div>
+          <div class="tech-p" data-en>The loop doesn't spin hot burning CPU: it sleeps ten seconds between passes and schedules cycles by whatever interval each user configured.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg><span data-es>Aislamiento por usuario</span><span data-en>Per-user isolation</span></div>
+          <div class="tech-p" data-es>Cada ciclo va envuelto en su propio <code>try</code>. Si la sesión de alguien caduca o la API responde raro, ese usuario ve el error en su log y los demás siguen operando.</div>
+          <div class="tech-p" data-en>Every cycle is wrapped in its own <code>try</code>. If someone's session expires or the API answers oddly, that user sees the error in their log and everyone else keeps running.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg><span data-es>Techo de acciones</span><span data-en>Action ceiling</span></div>
+          <div class="tech-p" data-es>Hay un límite duro de acciones por ciclo, configurable por variable de entorno. Si la lista de candidatos lo supera, se corta y se avisa. Pasarse de ritmo es la forma más rápida de que te bloqueen.</div>
+          <div class="tech-p" data-en>There's a hard cap on actions per cycle, set by an environment variable. If the candidate list exceeds it, it's truncated and logged. Going too fast is the quickest way to get blocked.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M12 2v20"/><circle cx="12" cy="12" r="4"/></svg><span data-es>Estado en memoria</span><span data-en>In-memory state</span></div>
+          <div class="tech-p" data-es>Última ejecución, próxima ejecución y estado viven en un mapa en memoria que el panel consulta por API. No se toca la base de datos para pintar un contador.</div>
+          <div class="tech-p" data-en>Last run, next run and status live in an in-memory map the dashboard polls over the API. The database isn't touched just to paint a counter.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 CLIENTE -->
+  <section id="client">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-index">04 / <span data-es>Cliente</span><span data-en>Client</span></span>
+        <h2 class="sec-title" data-es>Hablar con Vinted</h2>
+        <h2 class="sec-title" data-en>Talking to Vinted</h2>
+        <p class="sec-desc" data-es>No hay API pública. Todo el cliente está construido a mano: sesiones anónimas por país, extracción del token CSRF de tres sitios distintos según dónde lo esconda Vinted ese día, y una capa de cookies que sabe cuándo ha caducado.</p>
+        <p class="sec-desc" data-en>There is no public API. The whole client is hand-built: per-country anonymous sessions, CSRF token extraction from three different places depending on where Vinted hides it that day, and a cookie layer that knows when it has expired.</p>
+      </div>
+
+      <div class="stack">
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/></svg><span data-es>Sesion</span><span data-en>Session</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Una sesion anonima por dominio, cacheada</div>
+            <div class="layer-h" data-en>One cached anonymous session per domain</div>
+            <div class="layer-p" data-es>Cada dominio de Vinted exige su propio handshake. Se hace una vez, se guarda en caché y se reutiliza, protegido con un <code>Lock</code> para que dos búsquedas simultáneas no lo hagan dos veces.</div>
+            <div class="layer-p" data-en>Each Vinted domain demands its own handshake. It's done once, cached and reused, guarded by a <code>Lock</code> so two concurrent searches don't do it twice.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>CSRF</div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Tres estrategias de extraccion</div>
+            <div class="layer-h" data-en>Three extraction strategies</div>
+            <div class="layer-p" data-es>El token puede venir en la cookie, en una etiqueta <code>meta</code> del HTML o incrustado en un objeto JavaScript. Se prueban las tres, en ese orden, antes de rendirse.</div>
+            <div class="layer-p" data-en>The token may arrive in the cookie, in an HTML <code>meta</code> tag, or embedded in a JavaScript object. All three are tried, in that order, before giving up.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span data-es>Cuenta</span><span data-en>Account</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Validacion de cookie de usuario</div>
+            <div class="layer-h" data-en>User cookie validation</div>
+            <div class="layer-p" data-es>Antes de intentar cualquier acción autenticada se comprueba que la cookie pegada contenga las claves de sesión reales. Si no, se rechaza al momento en lugar de fallar a mitad de una operación.</div>
+            <div class="layer-p" data-en>Before attempting any authenticated action, the pasted cookie is checked for the real session keys. If they're missing it's rejected up front instead of failing halfway through an operation.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 DATOS -->
+  <section id="data">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-index">05 / <span data-es>Datos</span><span data-en>Data</span></span>
+        <h2 class="sec-title" data-es>Escrituras Que Se Pueden Repetir</h2>
+        <h2 class="sec-title" data-en>Writes You Can Repeat</h2>
+        <p class="sec-desc" data-es>Un worker que reintenta va a escribir lo mismo dos veces tarde o temprano. Todas las escrituras son idempotentes por diseño: <code class="inline-c">ON CONFLICT DO UPDATE</code> cuando el dato nuevo manda, <code class="inline-c">ON CONFLICT DO NOTHING</code> cuando el primero que llegó tenía razón.</p>
+        <p class="sec-desc" data-en>A worker that retries will write the same thing twice sooner or later. Every write is idempotent by design: <code class="inline-c">ON CONFLICT DO UPDATE</code> when the new value wins, <code class="inline-c">ON CONFLICT DO NOTHING</code> when whoever got there first was right.</p>
+      </div>
+
+      <div class="snip">
+        <div class="snip-head"><span>app.py</span><b><span data-es>escritura idempotente</span><span data-en>idempotent write</span></b></div>
+        <pre><span class="kw">INSERT INTO</span> configuracion (usuario_id, vinted_cookie)
+<span class="kw">VALUES</span> (%s, %s)
+<span class="kw">ON CONFLICT</span> (usuario_id) <span class="kw">DO UPDATE SET</span>
+    vinted_cookie = <span class="fn">EXCLUDED</span>.vinted_cookie</pre>
+      </div>
+
+      <div class="tech-grid" style="margin-top:22px">
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>JSONB</div>
+          <div class="tech-p" data-es>La configuración de usuario es una columna <code>JSONB</code>. Añadir un ajuste nuevo no requiere migración ni desplegar cambios de esquema, y sigue siendo consultable desde SQL.</div>
+          <div class="tech-p" data-en>User config is a <code>JSONB</code> column. A new setting needs no migration and no schema deploy, and it's still queryable from SQL.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/><path d="M21 3v6h-6"/></svg><span data-es>Reintentos seguros</span><span data-en>Safe retries</span></div>
+          <div class="tech-p" data-es>Los favoritos guardados usan clave compuesta <code>(id, usuario_id)</code> con <code>DO NOTHING</code>: el mismo artículo puede aparecer en veinte ciclos y solo se guarda una vez.</div>
+          <div class="tech-p" data-en>Saved favourites use a composite key <code>(id, usuario_id)</code> with <code>DO NOTHING</code>: the same item can turn up in twenty cycles and gets stored once.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16"/><path d="M9 20V9"/></svg><span data-es>Cursores tipados</span><span data-en>Typed cursors</span></div>
+          <div class="tech-p" data-es>Con <code>RealDictCursor</code> las filas llegan como diccionarios y saltan directas a JSON. Sin capa ORM en medio y sin desempaquetar tuplas por índice.</div>
+          <div class="tech-p" data-en>With <code>RealDictCursor</code> rows come back as dictionaries and go straight out as JSON. No ORM in between, no unpacking tuples by index.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 IA -->
+  <section id="ai">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-index">06 / IA</span>
+        <h2 class="sec-title" data-es>Gemini, Una integracion limpia</h2>
+        <h2 class="sec-title" data-en>Gemini, A clean integration</h2>
+        <p class="sec-desc" data-es>El modelo es <code class="inline-c">gemini-2.5-flash</code>, llamado en bruto contra <code class="inline-c">generativelanguage.googleapis.com</code>, sin SDK de por medio. Nunca se le pide texto libre: siempre JSON, y en el caso importante con un esquema cerrado que no admite improvisaciones. Un modelo que puede devolver cualquier cosa es un modelo que rompe la interfaz.</p>
+        <p class="sec-desc" data-en>The model is <code class="inline-c">gemini-2.5-flash</code>, called raw against <code class="inline-c">generativelanguage.googleapis.com</code>, no SDK in between. It's never asked for free text: always JSON, and where it matters, against a closed schema that leaves no room to improvise. A model that can return anything is a model that breaks your interface.</p>
+      </div>
+
+      <div class="tech-grid">
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg><span data-es>Buscar por foto</span><span data-en>Search by photo</span></div>
+          <div class="tech-p" data-es>Una imagen entra en base64 y sale una consulta de búsqueda de siete palabras como mucho: marca, modelo, tipo de prenda y color. Temperatura 0.2, porque aquí no queremos creatividad, queremos que acierte con el nombre del producto.</div>
+          <div class="tech-p" data-en>An image goes in as base64 and a search query comes out, seven words at most: brand, model, garment type and colour. Temperature 0.2, because creativity isn't wanted here — getting the product name right is.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg><span data-es>Redactar el anuncio</span><span data-en>Draft the listing</span></div>
+          <div class="tech-p" data-es>A partir de una foto o de cuatro palabras sueltas, el modelo rellena el anuncio entero: título, marca, talla, color, categoría, defectos y descripción. La condición no es texto libre, es un <code>enum</code> de cinco valores que Vinted acepta.</div>
+          <div class="tech-p" data-en>From a photo or a few loose words, the model fills the whole listing: title, brand, size, colour, category, defects and description. Condition isn't free text, it's an <code>enum</code> of the five values Vinted accepts.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg><span data-es>Reescribir lo que no se vende</span><span data-en>Rewrite what isn't selling</span></div>
+          <div class="tech-p" data-es>Un anuncio parado se reescribe para ganar visibilidad: título de 80 caracteres, descripción de 800. La instrucción es explícita en mantener la información factual, porque un modelo que se inventa la talla te devuelve el paquete.</div>
+          <div class="tech-p" data-en>A stalled listing gets rewritten for visibility: an 80-character title, an 800-character description. The prompt is explicit about keeping the facts intact, because a model that invents the size gets you a return.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></svg><span data-es>JSON o nada</span><span data-en>JSON or nothing</span></div>
+          <div class="tech-p" data-es>Todas las llamadas piden <code>responseMimeType: application/json</code>. Y por si acaso, el parser tiene un rescate: si el modelo envuelve el JSON en texto, se extrae con una expresión regular antes de darlo por perdido.</div>
+          <div class="tech-p" data-en>Every call asks for <code>responseMimeType: application/json</code>. And just in case, the parser has a rescue path: if the model wraps the JSON in prose, a regular expression digs it out before giving up.</div>
+        </div>
+      </div>
+
+      <div class="snip">
+        <div class="snip-head"><span>app.py</span><b>VINTED_DRAFT_SCHEMA</b></div>
+        <pre><span class="cm"># el modelo no elige las palabras: elige entre cinco</span>
+<span class="cm">"condition"</span>: {<span class="cm">"type"</span>: <span class="cm">"STRING"</span>, <span class="cm">"enum"</span>: [
+    <span class="cm">"nuevo_etiqueta"</span>, <span class="cm">"nuevo_sin_etiqueta"</span>,
+    <span class="cm">"muy_bueno"</span>, <span class="cm">"bueno"</span>, <span class="cm">"aceptable"</span>
+]}
+
+<span class="cm">"generationConfig"</span>: {
+    <span class="cm">"temperature"</span>: <span class="nu">0.4</span>,
+    <span class="cm">"responseMimeType"</span>: <span class="cm">"application/json"</span>,
+    <span class="cm">"responseSchema"</span>: VINTED_DRAFT_SCHEMA
+}</pre>
+      </div>
+
+      <div class="snip">
+        <div class="snip-head"><span>app.py</span><b><span data-es>reintentos</span><span data-en>retries</span></b></div>
+        <pre>GEMINI_RETRY_STATUS = {<span class="nu">429</span>, <span class="nu">500</span>, <span class="nu">502</span>, <span class="nu">503</span>, <span class="nu">504</span>}
+GEMINI_RETRY_DELAYS = (<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">4</span>)</pre>
+      </div>
+
+      <div class="stack" style="margin-top:22px">
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg><span data-es>Degradacion</span><span data-en>Degradation</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Si la IA se cae, el anuncio se sube igual</div>
+            <div class="layer-h" data-en>If the AI goes down, the listing still ships</div>
+            <div class="layer-p" data-es>Cuando Gemini no responde, el borrador no se cancela: se construye con los datos que escribió el usuario y se le avisa de que no hubo inferencia. La IA es un acelerador, no un requisito.</div>
+            <div class="layer-p" data-en>When Gemini doesn't answer, the draft isn't cancelled: it's built from whatever the user typed, and they're told there was no inference. The AI is an accelerator, not a dependency.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg><span data-es>Jerarquia</span><span data-en>Hierarchy</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Lo que escribe el usuario nunca se pisa</div>
+            <div class="layer-h" data-en>What the user wrote is never overwritten</div>
+            <div class="layer-p" data-es>Al montar el borrador, cada campo comprueba primero si el usuario lo rellenó. Solo si está vacío se usa el valor inferido. La IA rellena huecos; no corrige a nadie.</div>
+            <div class="layer-p" data-en>When the draft is assembled, every field first checks whether the user filled it in. The inferred value is only used if it's empty. The AI fills gaps; it doesn't correct anyone.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="spec-list">
+        <span class="spec"><b>MODELO</b> · gemini-2.5-flash</span>
+        <span class="spec"><b>ENDPOINT</b> · v1beta :generateContent</span>
+        <span class="spec"><b>AUTH</b> · x-goog-api-key</span>
+        <span class="spec"><b>TIMEOUT</b> · 20s</span>
+        <span class="spec"><b>BACKOFF</b> · 1s · 2s · 4s</span>
+        <span class="spec"><b>TEMPERATURE</b> · 0.2 / 0.4</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 NAVEGADOR -->
+  <section id="browser">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-index">07 / <span data-es>Navegador</span><span data-en>Browser</span></span>
+        <h2 class="sec-title" data-es>Cuando la API No Basta</h2>
+        <h2 class="sec-title" data-en>When the API Isn't Enough</h2>
+        <p class="sec-desc" data-es>Subir un anuncio no se puede hacer por HTTP a pelo. Para eso hay un Chromium headless gobernado con Playwright, con contexto persistente para que la sesión sobreviva entre ejecuciones y una capa de sigilo que borra los rastros típicos de la automatización.</p>
+        <p class="sec-desc" data-en>Publishing a listing can't be done over raw HTTP. That's what a headless Chromium driven by Playwright is for, with a persistent context so the session survives between runs and a stealth layer that scrubs the usual automation fingerprints.</p>
+      </div>
+
+      <div class="flow">
+        <div class="step">
+          <div class="step-n">01</div>
+          <div class="step-h" data-es>Contexto persistente</div>
+          <div class="step-h" data-en>Persistent context</div>
+          <div class="step-p" data-es>El perfil de Chromium se guarda en disco: la sesión iniciada una vez sigue viva en el siguiente arranque.</div>
+          <div class="step-p" data-en>The Chromium profile is stored on disk: log in once and the session is still there on the next boot.</div>
+        </div>
+        <div class="step">
+          <div class="step-n">02</div>
+          <div class="step-h" data-es>Binario del sistema</div>
+          <div class="step-h" data-en>System binary</div>
+          <div class="step-p" data-es>En el servidor usa el Chromium del sistema; si no existe, cae al que trae Playwright. El mismo código corre en local y en producción.</div>
+          <div class="step-p" data-en>On the server it uses the system Chromium; if that's missing it falls back to Playwright's own. The same code runs locally and in production.</div>
+        </div>
+        <div class="step">
+          <div class="step-n">03</div>
+          <div class="step-h" data-es>Headless conmutable</div>
+          <div class="step-h" data-en>Toggleable headless</div>
+          <div class="step-p" data-es>Una variable de entorno abre la ventana de verdad. Depurar un selector roto a ciegas es una forma lenta de perder la tarde.</div>
+          <div class="step-p" data-en>One environment variable pops the real window open. Debugging a broken selector blind is a slow way to lose an afternoon.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 FRONTEND -->
+  <section id="front">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-index">08 / Frontend</span>
+        <h2 class="sec-title" data-es>Sin Build, Sin Excusas</h2>
+        <h2 class="sec-title" data-en>No Build, No Excuses</h2>
+        <p class="sec-desc" data-es>No hay React, no hay bundler, no hay <code class="inline-c">node_modules</code>. Plantillas Jinja2 y JavaScript plano, servidos directamente. A cambio hay que resolver a mano dos cosas que un framework te da gratis: la caché de estáticos y el idioma.</p>
+        <p class="sec-desc" data-en>No React, no bundler, no <code class="inline-c">node_modules</code>. Jinja2 templates and plain JavaScript, served as-is. The tradeoff is solving by hand two things a framework hands you: static caching and language.</p>
+      </div>
+
+      <div class="snip">
+        <div class="snip-head"><span>app.py</span><b><span data-es>invalidacion de cache</span><span data-en>cache busting</span></b></div>
+        <pre><span class="kw">def</span> <span class="fn">asset</span>(path):
+    rel = path.lstrip(<span class="cm">"/"</span>)
+    <span class="kw">try</span>:
+        v = <span class="fn">int</span>(os.path.getmtime(os.path.join(app.static_folder, rel)))
+    <span class="kw">except</span> OSError:
+        v = <span class="nu">1</span>
+    <span class="kw">return</span> <span class="cm">"/static/"</span> + rel + <span class="cm">"?v="</span> + <span class="fn">str</span>(v)</pre>
+      </div>
+
+      <div class="tech-grid" style="margin-top:22px">
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="m17 7-5-5-5 5"/><path d="m17 17-5 5-5-5"/></svg><span data-es>Cache eterna, sin cache obsoleta</span><span data-en>Eternal cache, no stale cache</span></div>
+          <div class="tech-p" data-es>Los estáticos se sirven con <code>immutable</code> y un año de vida. La fecha de modificación del archivo viaja en la URL, así que al editarlo cambia la URL y el navegador vuelve a pedirlo. Caché agresiva sin el clásico "recarga con Control+F5".</div>
+          <div class="tech-p" data-en>Static files ship with <code>immutable</code> and a one-year lifetime. The file's mtime rides in the URL, so editing it changes the URL and the browser refetches. Aggressive caching without the classic "hard-refresh it".</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg><span data-es>Bilingue sin servidor</span><span data-en>Server-free bilingual</span></div>
+          <div class="tech-p" data-es>Cada texto lleva sus dos versiones en atributos <code>data-es</code> y <code>data-en</code>. Cambiar de idioma no recarga la página ni pega al servidor: reescribe el DOM y guarda la preferencia.</div>
+          <div class="tech-p" data-en>Every string carries both versions in <code>data-es</code> and <code>data-en</code> attributes. Switching language doesn't reload the page or hit the server: it rewrites the DOM and stores the preference.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg><span data-es>Iconos con red de seguridad</span><span data-en>Icons with a safety net</span></div>
+          <div class="tech-p" data-es>Los iconos se inyectan en cliente. Si la librería no carga en un segundo y medio, un fallback dibuja un marcador en su lugar: mejor un círculo que un hueco vacío.</div>
+          <div class="tech-p" data-en>Icons are injected client-side. If the library hasn't loaded within a second and a half, a fallback draws a placeholder instead: better a circle than an empty gap.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 09 SEGURIDAD -->
+  <section id="sec">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-index">09 / <span data-es>Seguridad</span><span data-en>Security</span></span>
+        <h2 class="sec-title" data-es>Lo Aburrido, Bien Hecho</h2>
+        <h2 class="sec-title" data-en>The Boring Parts, Done Right</h2>
+        <p class="sec-desc" data-es>Nada de lo que viene es original, y ese es exactamente el punto. La seguridad de una aplicación que mueve dinero y sesiones ajenas no se gana con una idea brillante: se gana no cometiendo los diez errores de siempre. Aquí están, uno por uno, y cómo están cerrados.</p>
+        <p class="sec-desc" data-en>None of what follows is original, and that is exactly the point. Security in an app that handles money and other people's sessions isn't won with a clever idea: it's won by not making the same ten mistakes as everyone else. Here they are, one by one, and how each is closed.</p>
+      </div>
+
+      <div class="tech-grid">
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg><span data-es>Inyeccion SQL</span><span data-en>SQL injection</span></div>
+          <div class="tech-p" data-es>Hay <b>92 consultas</b> a la base de datos en el proyecto. Cero usan f-strings o concatenación: todas pasan los valores como parámetros y es el driver quien los escapa. No hay una sola grieta por donde colar una comilla.</div>
+          <div class="tech-p" data-en><b>92 database queries</b> across the project. Zero use f-strings or concatenation: every value is passed as a parameter and the driver does the escaping. There isn't a single crack to slip a quote through.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg><span data-es>Contrasenas</span><span data-en>Passwords</span></div>
+          <div class="tech-p" data-es>Nunca se guarda una contraseña. Se guarda su hash, generado con Werkzeug, con sal propia por usuario. Ni siquiera desde dentro de la base de datos se pueden leer. Mínimo ocho caracteres al registrarse y al resetear.</div>
+          <div class="tech-p" data-en>A password is never stored. Its hash is, generated with Werkzeug, individually salted per user. Not even from inside the database can they be read back. Eight characters minimum on signup and on reset.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5v.01"/><path d="M16 15.5v.01"/><path d="M12 12v.01"/><path d="M11 17v.01"/><path d="M7 14v.01"/></svg><span data-es>Secuestro de sesion</span><span data-en>Session hijacking</span></div>
+          <div class="tech-p" data-es>La cookie de sesión va firmada criptográficamente, es inaccesible desde JavaScript (<code>HttpOnly</code>), no viaja nunca por HTTP plano (<code>Secure</code>) y no se envía en peticiones cruzadas (<code>SameSite=Lax</code>). Un XSS no te la roba y un CSRF no la usa.</div>
+          <div class="tech-p" data-en>The session cookie is cryptographically signed, unreachable from JavaScript (<code>HttpOnly</code>), never travels over plain HTTP (<code>Secure</code>), and isn't sent on cross-site requests (<code>SameSite=Lax</code>). An XSS can't steal it and a CSRF can't use it.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>XSS</div>
+          <div class="tech-p" data-es>Las plantillas escapan por defecto todo lo que se inyecta en ellas. Un título de Vinted que traiga una etiqueta <code>&lt;script&gt;</code> se pinta como texto, no se ejecuta. Y el contenido viene de terceros, así que esto no es teórico.</div>
+          <div class="tech-p" data-en>Templates escape everything injected into them by default. A Vinted title carrying a <code>&lt;script&gt;</code> tag renders as text; it doesn't run. And that content comes from third parties, so this isn't hypothetical.</div>
+        </div>
+      </div>
+
+      <div class="snip">
+        <div class="snip-head"><span>app.py</span><b><span data-es>doble limite en el login</span><span data-en>double limit on login</span></b></div>
+        <pre>@app.route(<span class="cm">"/api/login"</span>, methods=[<span class="cm">"POST"</span>])
+<span class="fn">@rate_limit</span>(<span class="nu">10</span>, <span class="nu">300</span>, by=<span class="cm">"ip"</span>)      <span class="cm"># 10 intentos / 5 min por IP</span>
+<span class="fn">@rate_limit</span>(<span class="nu">6</span>, <span class="nu">900</span>, by=<span class="cm">"email"</span>)   <span class="cm"># 6 / 15 min contra la misma cuenta</span>
+<span class="kw">def</span> <span class="fn">login_api</span>():</pre>
+      </div>
+
+      <div class="snip">
+        <div class="snip-head"><span>app.py</span><b>@app.after_request</b></div>
+        <pre><span class="kw">def</span> <span class="fn">_security_headers</span>(resp):
+    resp.headers[<span class="cm">'X-Content-Type-Options'</span>]    = <span class="cm">'nosniff'</span>
+    resp.headers[<span class="cm">'X-Frame-Options'</span>]           = <span class="cm">'SAMEORIGIN'</span>
+    resp.headers[<span class="cm">'Referrer-Policy'</span>]           = <span class="cm">'strict-origin-when-cross-origin'</span>
+    resp.headers[<span class="cm">'Permissions-Policy'</span>]        = <span class="cm">'geolocation=(), microphone=(), camera=()'</span>
+    resp.headers[<span class="cm">'Strict-Transport-Security'</span>] = <span class="cm">'max-age=31536000; includeSubDomains; preload'</span></pre>
+      </div>
+
+      <div class="stack" style="margin-top:22px">
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg><span data-es>Fuerza bruta</span><span data-en>Brute force</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Diez intentos por IP, seis por cuenta</div>
+            <div class="layer-h" data-en>Ten attempts per IP, six per account</div>
+            <div class="layer-p" data-es>Un atacante puede probar diez contraseñas cada cinco minutos desde una IP. Pero si reparte el ataque entre mil IPs para esquivar ese límite, se topa con el segundo: <b>seis intentos por hora contra la misma cuenta, venga de donde venga</b>. Diluir el origen ya no sirve de nada. Y la ventana es deslizante, no un contador que se pone a cero a la hora en punto, así que tampoco vale esperar al cambio de hora para disparar en ráfaga.</div>
+            <div class="layer-p" data-en>An attacker can try ten passwords every five minutes from one IP. But spread the attack across a thousand IPs to dodge that limit and they hit the second one: <b>six attempts per hour against the same account, wherever they come from</b>. Diluting the source buys nothing. And the window slides, it isn't a counter that zeroes on the hour, so waiting for the rollover to fire a burst doesn't work either.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg><span data-es>Abuso de coste</span><span data-en>Cost abuse</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Cada llamada a la IA cuesta dinero real</div>
+            <div class="layer-h" data-en>Every AI call costs real money</div>
+            <div class="layer-p" data-es>Los endpoints que llaman a Gemini también están limitados, pero no por seguridad: por factura. Un bucle mal escrito, o alguien con ganas de hacer daño, puede quemar la cuota de la API en una tarde. Veinte análisis de imagen y treinta generaciones de anuncio por usuario y hora es de sobra para trabajar, y muy poco para arruinar a nadie.</div>
+            <div class="layer-p" data-en>The endpoints that call Gemini are capped too, though not for security: for the bill. A badly written loop, or someone in a bad mood, can burn through the API quota in an afternoon. Twenty image analyses and thirty listing generations per user per hour is plenty to work with, and far too little to ruin anyone.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/></svg><span data-es>La IP real</span><span data-en>The real IP</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Detras del proxy, todos parecen la misma persona</div>
+            <div class="layer-h" data-en>Behind the proxy, everyone looks like one person</div>
+            <div class="layer-p" data-es>Este es el detalle que convierte un limitador en una caída de servicio si se pasa por alto: detrás de un proxy inverso, todas las peticiones llegan desde <code>127.0.0.1</code>. Un límite por IP se volvería un límite <i>global</i> sin avisar, y el primer atacante dejaría fuera a todos los usuarios legítimos. Por eso la IP se resuelve leyendo la cabecera que escribe el proxy, confiando en un único salto para que nadie pueda falsificarla desde fuera.</div>
+            <div class="layer-p" data-en>This is the detail that turns a rate limiter into an outage if you miss it: behind a reverse proxy, every request arrives from <code>127.0.0.1</code>. A per-IP limit would quietly become a <i>global</i> limit, and the first attacker would lock out every legitimate user. So the IP is resolved from the header the proxy writes, trusting exactly one hop so nobody can forge it from outside.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg><span data-es>Cabeceras</span><span data-en>Headers</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Cinco cabeceras en cada respuesta que sale</div>
+            <div class="layer-h" data-en>Five headers on every response that leaves</div>
+            <div class="layer-p" data-es>No se decoran endpoints uno a uno: un <code>after_request</code> las estampa todas. <b>nosniff</b> impide que el navegador adivine tipos de contenido, <b>SAMEORIGIN</b> bloquea el <i>clickjacking</i> por iframe, <b>Referrer-Policy</b> evita filtrar rutas internas al salir del dominio, <b>Permissions-Policy</b> apaga cámara, micrófono y geolocalización porque la aplicación no los usa, y <b>HSTS</b> con <code>preload</code> obliga a HTTPS antes incluso de la primera petición.</div>
+            <div class="layer-p" data-en>Endpoints aren't decorated one by one: a single <code>after_request</code> stamps them all. <b>nosniff</b> stops the browser guessing content types, <b>SAMEORIGIN</b> blocks iframe clickjacking, <b>Referrer-Policy</b> keeps internal paths from leaking off-domain, <b>Permissions-Policy</b> switches off camera, microphone and geolocation because the app doesn't use them, and <b>HSTS</b> with <code>preload</code> forces HTTPS before the very first request.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg><span data-es>Enumeracion</span><span data-en>Enumeration</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>El formulario de recuperacion siempre dice que si</div>
+            <div class="layer-h" data-en>The recovery form always says yes</div>
+            <div class="layer-p" data-es>Si pides recuperar la contraseña de un correo que no existe, la respuesta es idéntica a la de uno que sí: <code>ok</code>. Un atacante no puede usar ese formulario para averiguar qué direcciones están registradas, que es el primer paso de cualquier campaña dirigida.</div>
+            <div class="layer-p" data-en>Ask to recover the password for an address that doesn't exist and the response is identical to one that does: <code>ok</code>. An attacker can't use that form to work out which addresses are registered, which is step one of any targeted campaign.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg><span data-es>Tokens</span><span data-en>Tokens</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>De un solo uso y con fecha de caducidad</div>
+            <div class="layer-h" data-en>Single-use, with an expiry date</div>
+            <div class="layer-p" data-es>El token de verificación de correo se pone a <code>NULL</code> en el mismo <code>UPDATE</code> que activa la cuenta: reutilizarlo es imposible. El de reseteo de contraseña caduca a la hora, y esa caducidad se guarda en la base de datos, no en el enlace, así que no se puede manipular desde fuera.</div>
+            <div class="layer-p" data-en>The email verification token is set to <code>NULL</code> in the same <code>UPDATE</code> that activates the account: reuse is impossible. The password reset token expires after an hour, and that expiry lives in the database, not in the link, so it can't be tampered with from outside.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"/><path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06"/><path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8"/></svg><span data-es>Pagos</span><span data-en>Payments</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Al webhook de Stripe no se le puede atacar</div>
+            <div class="layer-h" data-en>The Stripe webhook cannot be attacked</div>
+            <div class="layer-p" data-es>Cualquiera puede hacer un <code>POST</code> al endpoint de pagos diciendo que ha pagado el plan Max. Por eso el cuerpo se valida contra la firma HMAC de Stripe antes de mirarlo siquiera. Sin cabecera de firma, 400. Con firma inválida, 400. No se activa un plan por lo que diga el JSON, sino porque la firma cuadra.</div>
+            <div class="layer-p" data-en>Anyone can <code>POST</code> to the payments endpoint claiming they've paid for the Max plan. That's why the body is validated against Stripe's HMAC signature before it's even read. No signature header, 400. Bad signature, 400. A plan isn't activated because the JSON says so, but because the signature checks out.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><circle cx="10" cy="16" r="2"/><path d="m16 10-4.5 4.5"/><path d="m15 11 1 1"/></svg><span data-es>Secretos</span><span data-en>Secrets</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Ni una credencial en el repositorio</div>
+            <div class="layer-h" data-en>Not one credential in the repository</div>
+            <div class="layer-p" data-es>Clave de Stripe, clave de Gemini, cadena de conexión a la base de datos y clave de firma de sesión salen todas de variables de entorno. La clave SSH del despliegue vive en los secretos de GitHub y nunca se imprime en el log. El <code>.env</code> está en <code>.gitignore</code> desde el primer día.</div>
+            <div class="layer-p" data-en>Stripe key, Gemini key, database connection string and session signing key all come from environment variables. The deploy SSH key lives in GitHub secrets and is never printed to the log. The <code>.env</code> file has been in <code>.gitignore</code> since day one.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/></svg><span data-es>Identidad</span><span data-en>Identity</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Correo verificado o no se entra</div>
+            <div class="layer-h" data-en>Verified email or no entry</div>
+            <div class="layer-p" data-es>Registrarse no basta: hasta que no se abre el enlace de activación, la cuenta queda en espera. Quien prefiera no crear otra contraseña más entra con Google mediante OAuth 2.0, y entonces las credenciales no pasan nunca por este servidor.</div>
+            <div class="layer-p" data-en>Signing up isn't enough: until the activation link is opened, the account stays pending. Anyone who'd rather not create yet another password signs in with Google over OAuth 2.0, and then credentials never touch this server at all.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="spec-list">
+        <span class="spec"><b>SQL</b> · 92 <span data-es>consultas parametrizadas</span><span data-en>parameterised queries</span></span>
+        <span class="spec"><b>LOGIN</b> · 10/5min · IP</span>
+        <span class="spec"><b>LOGIN</b> · 6/15min · <span data-es>cuenta</span><span data-en>account</span></span>
+        <span class="spec"><b>IA</b> · 20-30/h · <span data-es>usuario</span><span data-en>user</span></span>
+        <span class="spec"><b>HSTS</b> · 31536000 · preload</span>
+        <span class="spec"><b>COOKIE</b> · HttpOnly · Secure · Lax</span>
+        <span class="spec"><b>HASH</b> · Werkzeug + salt</span>
+        <span class="spec"><b>RESET</b> · 1h TTL</span>
+        <span class="spec"><b>WEBHOOK</b> · HMAC Stripe</span>
+        <span class="spec"><b>OAUTH</b> · Google 2.0</span>
+        <span class="spec"><b>SECRETOS</b> · env + GitHub Secrets</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 DESPLIEGUE -->
+  <section id="deploy">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-index">10 / <span data-es>Despliegue</span><span data-en>Deploy</span></span>
+        <h2 class="sec-title" data-es>De Push a Produccion</h2>
+        <h2 class="sec-title" data-en>From Push to Production</h2>
+        <p class="sec-desc" data-es>Un push a <code class="inline-c">main</code> lo dispara todo. GitHub Actions entra por SSH al servidor, fuerza el árbol de trabajo a coincidir exactamente con el remoto y reinicia el proceso. Sin <code class="inline-c">pull</code>: un <code class="inline-c">pull</code> puede fallar en silencio por un conflicto y dejarte creyendo que has desplegado.</p>
+        <p class="sec-desc" data-en>A push to <code class="inline-c">main</code> triggers everything. GitHub Actions SSHes into the server, forces the working tree to match the remote exactly, and restarts the process. No <code class="inline-c">pull</code>: a <code class="inline-c">pull</code> can fail silently on a conflict and leave you believing you deployed.</p>
+      </div>
+
+      <div class="snip" style="margin-top:0">
+        <div class="snip-head"><span>.github/workflows/deploy.yml</span><b>ssh-action</b></div>
+        <pre>set -euo pipefail
+<span class="kw">cd</span> /home/ubuntu/VintHook
+<span class="fn">git</span> fetch origin main
+<span class="fn">git</span> reset --hard origin/main
+<span class="fn">pm2</span> restart vinthook --update-env</pre>
+      </div>
+
+      <div class="flow" style="margin-top:22px">
+        <div class="step">
+          <div class="step-n">01</div>
+          <div class="step-h">git push</div>
+          <div class="step-p" data-es>El workflow escucha solo la rama principal.</div>
+          <div class="step-p" data-en>The workflow only listens on the main branch.</div>
+        </div>
+        <div class="step">
+          <div class="step-n">02</div>
+          <div class="step-h">SSH</div>
+          <div class="step-p" data-es>Clave privada en los secretos del repositorio; nada de credenciales en el código.</div>
+          <div class="step-p" data-en>Private key in repository secrets; no credentials in the code.</div>
+        </div>
+        <div class="step">
+          <div class="step-n">03</div>
+          <div class="step-h">reset --hard</div>
+          <div class="step-p" data-es>El servidor no tiene voz: su árbol de trabajo es el remoto, byte a byte.</div>
+          <div class="step-p" data-en>The server gets no say: its working tree is the remote, byte for byte.</div>
+        </div>
+        <div class="step">
+          <div class="step-n">04</div>
+          <div class="step-h">pm2 restart</div>
+          <div class="step-p" data-es>El proceso vuelve a levantarse y recarga plantillas y variables de entorno.</div>
+          <div class="step-p" data-en>The process comes back up and reloads templates and environment variables.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 COBERTURA -->
+  <section id="markets">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="sec-index">11 / <span data-es>Cobertura</span><span data-en>Coverage</span></span>
+        <h2 class="sec-title" data-es>Veintiseis Dominios</h2>
+        <h2 class="sec-title" data-en>Twenty-Six Domains</h2>
+        <p class="sec-desc" data-es>Cada país es un dominio distinto, con su moneda, su idioma y su propio handshake. El motor los trata como una sola superficie de búsqueda.</p>
+        <p class="sec-desc" data-en>Every country is a separate domain, with its own currency, language and handshake. The engine treats them as a single search surface.</p>
+      </div>
+
+      <div class="map-grid">
+        <div class="map-cell"><b>com</b>Estados Unidos</div>
+        <div class="map-cell"><b>co.uk</b>Reino Unido</div>
+        <div class="map-cell"><b>ie</b>Irlanda</div>
+        <div class="map-cell"><b>es</b>Espana</div>
+        <div class="map-cell"><b>fr</b>Francia</div>
+        <div class="map-cell"><b>it</b>Italia</div>
+        <div class="map-cell"><b>de</b>Alemania</div>
+        <div class="map-cell"><b>nl</b>Holanda</div>
+        <div class="map-cell"><b>be</b>Belgica</div>
+        <div class="map-cell"><b>lu</b>Luxemburgo</div>
+        <div class="map-cell"><b>at</b>Austria</div>
+        <div class="map-cell"><b>pl</b>Polonia</div>
+        <div class="map-cell"><b>pt</b>Portugal</div>
+        <div class="map-cell"><b>cz</b>Chequia</div>
+        <div class="map-cell"><b>sk</b>Eslovaquia</div>
+        <div class="map-cell"><b>hu</b>Hungria</div>
+        <div class="map-cell"><b>ro</b>Rumania</div>
+        <div class="map-cell"><b>lt</b>Lituania</div>
+        <div class="map-cell"><b>lv</b>Letonia</div>
+        <div class="map-cell"><b>ee</b>Estonia</div>
+        <div class="map-cell"><b>se</b>Suecia</div>
+        <div class="map-cell"><b>fi</b>Finlandia</div>
+        <div class="map-cell"><b>dk</b>Dinamarca</div>
+        <div class="map-cell"><b>gr</b>Grecia</div>
+        <div class="map-cell"><b>hr</b>Croacia</div>
+        <div class="map-cell"><b>bg</b>Bulgaria</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-title" data-es><br>La ingeniería completa de VintHook.</div>
+      <div class="foot-title" data-en><br>The complete engineering of VintHook.</div>
+      <div class="foot-meta">
+        VintHook&#174;<br>
+        <span data-es>Ficha tecnica</span><span data-en>Technical brief</span><br>
+      </div>
+    </div>
+    <div class="foot-bar">
+      <span>&#47;&#47; Python · Flask · PostgreSQL · Playwright</span>
+      <span>Pablo Miranda Hidalgo</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root=document.body;
+  var lang=document.getElementById('lang');
+  lang.addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    root.setAttribute('data-lang',b.dataset.set);
+    document.documentElement.lang=b.dataset.set;
+    lang.querySelectorAll('button').forEach(function(x){x.classList.toggle('active',x===b);});
+  });
+
+  var orb=document.getElementById('orb');
+  var tx=0,ty=0,cx=0,cy=0,active=false;
+  window.addEventListener('mousemove',function(e){
+    tx=e.clientX;ty=e.clientY;
+    if(!active){active=true;orb.style.opacity='.85';}
+  });
+  window.addEventListener('mouseleave',function(){active=false;orb.style.opacity='0';});
+  (function loop(){
+    cx+=(tx-cx)*0.14;cy+=(ty-cy)*0.14;
+    orb.style.transform='translate('+cx+'px,'+cy+'px) translate(-50%,-50%)';
+    requestAnimationFrame(loop);
+  })();
+
+  var io=new IntersectionObserver(function(en){
+    en.forEach(function(x){if(x.isIntersecting){x.target.style.opacity='1';x.target.style.transform='none';}});
+  },{threshold:.10});
+  document.querySelectorAll('section .sec-head, .metrics, .stack, .flow, .snip, .tech-grid, .spec-list, .map-grid').forEach(function(el){
+    el.style.opacity='0';el.style.transform='translateY(18px)';el.style.transition='opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1)';
+    io.observe(el);
+  });
+})();
+</script>
+</body>
+</html>
