@@ -384,6 +384,39 @@ section{position:relative;padding:clamp(64px,9vw,120px) 0;border-top:1px solid v
 
 [data-lang="en"] [data-es]{display:none}
 [data-lang="es"] [data-en]{display:none}
+
+.demo-blur{position:relative;width:120px;height:80px;overflow:hidden;border:1px solid var(--line)}
+.demo-blur-bg{position:absolute;inset:0;background:repeating-linear-gradient(45deg,var(--primary) 0 8px,var(--secondary) 8px 16px);opacity:.55}
+.demo-blur-glass{position:absolute;inset:14px;border:1px solid var(--line-strong);background:rgba(19,18,31,.45);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.comp-stage--col{flex-direction:column;align-items:stretch;gap:22px}
+.fbk-row{display:flex;flex-direction:column;gap:10px}
+.fbk-label{font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint)}
+.fbk-chips{display:flex;flex-wrap:wrap;gap:8px}
+.fbk-chip{padding:8px 16px;border:1px solid var(--line);border-radius:9999px;font-size:.82rem;font-weight:600;color:var(--text)}
+.fbk-chip.is-on{background:var(--primary);border-color:var(--primary);color:var(--bg)}
+.fbk-textarea{min-height:96px;padding:14px 16px;border:1px solid var(--line-strong);background:var(--bg);color:var(--text-dim);font-size:.92rem}
+.fbk-counter{align-self:flex-end;font-family:var(--mono);font-size:.68rem;color:var(--text-faint)}
+.fbk-stars{display:flex;gap:6px}
+.fbk-stars svg{width:22px;height:22px;fill:transparent;stroke:var(--tertiary);stroke-width:1.5}
+.fbk-stars .is-on svg{fill:var(--secondary);stroke:var(--secondary)}
+.fbk-foot{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+.fbk-alert{padding:10px 14px;border:1px solid var(--line);font-size:.82rem}
+.fbk-alert--ok{color:var(--green);border-color:color-mix(in srgb,var(--green) 40%,transparent)}
+.comp-stage--blur{position:relative;overflow:hidden;justify-content:center;background:repeating-linear-gradient(135deg,var(--surface) 0 18px,var(--surface-2) 18px 36px)}
+.obd-modal{position:relative;width:100%;max-width:520px;padding:clamp(20px,3vw,32px);border:1px solid var(--line);background:rgba(19,18,31,.55);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;flex-direction:column;gap:16px}
+.obd-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.obd-item{padding:12px 6px;border:1px solid var(--line);text-align:center;font-size:.74rem;font-weight:600;color:var(--text-dim)}
+.obd-item.is-on{border-color:var(--tertiary);color:var(--tertiary)}
+.obd-note{font-size:.84rem;color:var(--text-dim)}
+.comp-stage--states{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;padding:0;background:var(--line)}
+.st-card{background:var(--surface);padding:24px;display:flex;flex-direction:column;gap:12px;min-height:180px}
+.st-bar{height:2px;background:var(--line);overflow:hidden}
+.st-bar span{display:block;height:100%;width:62%;background:var(--primary)}
+.st-mono{font-family:var(--mono);font-size:.7rem;letter-spacing:.06em;color:var(--text-faint)}
+.st-icon{width:28px;height:28px;color:var(--amber)}
+.st-card--error .st-icon{color:var(--red)}
+.st-title{font-size:1rem;font-weight:800;color:var(--text)}
+@media(max-width:480px){.obd-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.fbk-foot .btn{width:100%;justify-content:center}}
 </style>
 </head>
 <body data-lang="es">
@@ -517,6 +550,7 @@ section{position:relative;padding:clamp(64px,9vw,120px) 0;border-top:1px solid v
           <div class="swatch"><div class="chip" style="background:#1a1825"></div><div class="meta"><span class="role" data-es>Superficie</span><span class="role" data-en>Surface</span><span class="hex">#1A1825</span><span class="var">--surface</span></div></div>
           <div class="swatch"><div class="chip" style="background:#211f2e"></div><div class="meta"><span class="role" data-es>Superficie 2</span><span class="role" data-en>Surface 2</span><span class="hex">#211F2E</span><span class="var">--surface-2</span></div></div>
           <div class="swatch"><div class="chip" style="background:#2a2836"></div><div class="meta"><span class="role" data-es>Superficie 3</span><span class="role" data-en>Surface 3</span><span class="hex">#2A2836</span><span class="var">--surface-3</span></div></div>
+          <div class="swatch"><div class="chip" style="background:#1f1e2b"></div><div class="meta"><span class="role" data-es>Superficie Panel</span><span class="role" data-en>Panel Surface</span><span class="hex">#1F1E2B</span><span class="var">--color-surface</span></div></div>
         </div>
       </div>
 
@@ -606,8 +640,8 @@ section{position:relative;padding:clamp(64px,9vw,120px) 0;border-top:1px solid v
         <span class="sec-index">03 / <span data-es>Geometría &amp; Profundidad</span><span data-en>Geometry &amp; Depth</span></span>
         <h2 class="sec-title" data-es>Bordes</h2>
         <h2 class="sec-title" data-en>Borders</h2>
-        <p class="sec-desc" data-es>Radio cero en tarjetas y botones. La profundidad sale de bordes de 1px bien medidos, nunca de un desenfoque. La única sombra que dejamos entrar es dura y desplazada, sacada del print brutalista.</p>
-        <p class="sec-desc" data-en>Zero radius on cards and buttons. Depth comes from carefully measured 1px borders, never from blur. The only shadow we let in is hard and offset, lifted from brutalist print.</p>
+        <p class="sec-desc" data-es>Radio cero en tarjetas y botones. La profundidad sale de bordes de 1px bien medidos, no de sombras difuminadas. La única sombra que dejamos entrar es dura y desplazada, sacada del print brutalista. El desenfoque se reserva para lo que flota encima: modales y capas superpuestas.</p>
+        <p class="sec-desc" data-en>Zero radius on cards and buttons. Depth comes from carefully measured 1px borders, not from soft shadows. The only shadow we let in is hard and offset, lifted from brutalist print. Blur is reserved for what floats on top: modals and overlays.</p>
       </div>
 
       <div class="geo-grid">
@@ -634,6 +668,12 @@ section{position:relative;padding:clamp(64px,9vw,120px) 0;border-top:1px solid v
           <div class="geo-demo"><div class="demo-corner"><span></span><span></span><span></span><span></span></div></div>
           <p data-es>Esquinas de mira que encuadran zonas activas como un visor.</p>
           <p data-en>Reticle corners that frame active zones like a viewfinder.</p>
+        </div>
+        <div class="geo-card">
+          <h4 data-es>Backdrop Blur · 20px</h4><h4 data-en>Backdrop Blur · 20px</h4>
+          <div class="geo-demo"><div class="demo-blur"><span class="demo-blur-bg"></span><span class="demo-blur-glass"></span></div></div>
+          <p data-es>Modales y capas superpuestas, como el onboarding obligatorio, flotan sobre un desenfoque gaussiano de 20px con borde de 1px.</p>
+          <p data-en>Modals and overlays, like the mandatory onboarding, float over a 20px Gaussian blur with a 1px border.</p>
         </div>
       </div>
     </div>
@@ -693,6 +733,73 @@ section{position:relative;padding:clamp(64px,9vw,120px) 0;border-top:1px solid v
             <div class="t-row"><span class="t-time">[13:36:17.516]</span><span class="t-tag t-tag--snipe">SNIPE</span><span class="t-text">Yeezy Slide Bone &middot; 38 EUR</span><span class="t-target"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span></div>
           </div>
           <div class="terminal-fade"></div>
+        </div>
+      </div>
+
+      <div class="comp-block">
+        <h3 data-es>Formulario de Feedback</h3><h3 data-en>Feedback Form</h3>
+        <div class="comp-stage comp-stage--col">
+          <div class="fbk-row">
+            <span class="fbk-label" data-es>Categoría</span><span class="fbk-label" data-en>Category</span>
+            <div class="fbk-chips">
+              <span class="fbk-chip is-on" data-es>Error</span><span class="fbk-chip is-on" data-en>Bug</span>
+              <span class="fbk-chip">Idea</span>
+              <span class="fbk-chip" data-es>Buscador</span><span class="fbk-chip" data-en>Search</span>
+              <span class="fbk-chip" data-es>Pagos</span><span class="fbk-chip" data-en>Billing</span>
+              <span class="fbk-chip" data-es>Otro</span><span class="fbk-chip" data-en>Other</span>
+            </div>
+          </div>
+          <div class="fbk-row">
+            <span class="fbk-label" data-es>Mensaje</span><span class="fbk-label" data-en>Message</span>
+            <div class="fbk-textarea"><span data-es>El filtro de precio máximo ignora los decimales...</span><span data-en>The max price filter ignores decimals...</span></div>
+            <span class="fbk-counter">46 / 2000</span>
+          </div>
+          <div class="fbk-row">
+            <span class="fbk-label" data-es>Puntuación (opcional)</span><span class="fbk-label" data-en>Rating (optional)</span>
+            <div class="fbk-stars"><span class="is-on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span><span class="is-on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span><span class="is-on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span><span class="is-on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span></div>
+          </div>
+          <div class="fbk-foot">
+            <span class="fbk-alert fbk-alert--ok" data-es>Gracias. Hemos recibido tu feedback.</span><span class="fbk-alert fbk-alert--ok" data-en>Thanks. We received your feedback.</span>
+            <button class="btn btn--primary" type="button"><span data-es>Enviar feedback</span><span data-en>Send feedback</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="comp-block">
+        <h3 data-es>Onboarding · ¿Cómo nos has conocido?</h3><h3 data-en>Onboarding · How did you hear about us?</h3>
+        <div class="comp-stage comp-stage--blur">
+          <div class="obd-modal">
+            <span class="fbk-label" data-es>Un último paso</span><span class="fbk-label" data-en>One last step</span>
+            <div class="obd-grid">
+              <span class="obd-item">TikTok</span><span class="obd-item is-on">Instagram</span><span class="obd-item">YouTube</span><span class="obd-item">Google</span>
+              <span class="obd-item">X / Twitter</span><span class="obd-item">Facebook</span><span class="obd-item" data-es>Amigos</span><span class="obd-item" data-en>Friends</span><span class="obd-item" data-es>Otro</span><span class="obd-item" data-en>Other</span>
+            </div>
+            <p class="obd-note" data-es>Obligatorio para cuentas nuevas de Google antes de entrar al panel. Se pregunta una sola vez.</p>
+            <p class="obd-note" data-en>Mandatory for new Google accounts before entering the dashboard. Asked only once.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="comp-block">
+        <h3 data-es>Estados del Buscador</h3><h3 data-en>Search States</h3>
+        <div class="comp-stage comp-stage--states">
+          <div class="st-card">
+            <span class="fbk-label" data-es>Cargando</span><span class="fbk-label" data-en>Loading</span>
+            <div class="st-bar"><span></span></div>
+            <span class="st-mono" data-es>Escaneo turbo, 3 país(es) x 2 pág.</span><span class="st-mono" data-en>Turbo scan, 3 country(ies) x 2 pages</span>
+          </div>
+          <div class="st-card">
+            <span class="fbk-label" data-es>Sin resultados</span><span class="fbk-label" data-en>No results</span>
+            <svg class="st-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M8 11h6"/></svg>
+            <b class="st-title" data-es>No se encontraron resultados</b><b class="st-title" data-en>No results found</b>
+            <span class="st-mono" data-es>Aviso ámbar, no error</span><span class="st-mono" data-en>Amber notice, not an error</span>
+          </div>
+          <div class="st-card st-card--error">
+            <span class="fbk-label" data-es>Error</span><span class="fbk-label" data-en>Error</span>
+            <svg class="st-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+            <b class="st-title" data-es>Error al buscar</b><b class="st-title" data-en>Search failed</b>
+            <span class="st-mono">HTTP 502 · server_error</span>
+          </div>
         </div>
       </div>
     </div>

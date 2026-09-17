@@ -563,8 +563,8 @@ section{position:relative;padding:clamp(64px,9vw,120px) 0;border-top:1px solid v
         <span class="sec-index">01 / <span data-es>Motor</span><span data-en>Engine</span></span>
         <h2 class="sec-title" data-es>Dos Motores, Uno de Repuesto</h2>
         <h2 class="sec-title" data-en>Two Engines, One a Spare</h2>
-        <p class="sec-desc" data-es>Buscar en Vinted no es una petición: son decenas, contra varios países y varias páginas de resultados a la vez. La búsqueda turbo detecta en arranque si <code class="inline-c">aiohttp</code> está instalado. Si lo está, lanza todas las peticiones en un único bucle de eventos. Si no, cae a un pool de hilos y nadie se entera.</p>
-        <p class="sec-desc" data-en>Searching Vinted isn't one request: it's dozens, across several countries and several result pages at once. Turbo search checks at boot whether <code class="inline-c">aiohttp</code> is installed. If it is, every request goes out on a single event loop. If not, it falls back to a thread pool and nobody notices.</p>
+        <p class="sec-desc" data-es>Buscar en Vinted no es una petición: son decenas, contra varios países y varias páginas de resultados a la vez. La búsqueda turbo usa primero un pool de hilos con <code class="inline-c">curl_cffi</code>, que imita la huella TLS de Chrome. Si esa vía no está disponible o vuelve vacía, pasa a <code class="inline-c">aiohttp</code> y lanza todas las peticiones en un único bucle de eventos.</p>
+        <p class="sec-desc" data-en>Searching Vinted isn't one request: it's dozens, across several countries and several result pages at once. Turbo search first runs a thread pool on <code class="inline-c">curl_cffi</code>, which mimics Chrome's TLS fingerprint. If that path is unavailable or comes back empty, it moves to <code class="inline-c">aiohttp</code> and fires every request on a single event loop.</p>
       </div>
 
       <div class="flow">
@@ -616,7 +616,46 @@ section{position:relative;padding:clamp(64px,9vw,120px) 0;border-top:1px solid v
         <span class="spec"><b>limit</b> · 30</span>
         <span class="spec"><b>limit_per_host</b> · 5</span>
         <span class="spec"><b>timeout</b> · 16s / 6s</span>
-        <span class="spec"><b>fallback</b> · 12 <span data-es>hilos</span><span data-en>threads</span></span>
+        <span class="spec"><b>curl_cffi</b> · 12 <span data-es>hilos</span><span data-en>threads</span></span>
+      </div>
+
+      <div class="stack" style="margin-top:22px">
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span data-es>Entrada</span><span data-en>Input</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Ningún parámetro tumba el endpoint</div>
+            <div class="layer-h" data-en>No parameter can take the endpoint down</div>
+            <div class="layer-p" data-es>Cada número pasa por <code>_as_int</code> / <code>_as_float</code> con límites (páginas 1-5, valoración 0-5). La consulta se limpia de caracteres de control y se corta a 120. Los países se filtran contra la lista de 26 dominios. Un <code>null</code> o un texto donde iba un número ya no produce un 500: produce un 400 con <code>code: invalid_params</code>.</div>
+            <div class="layer-p" data-en>Every number goes through <code>_as_int</code> / <code>_as_float</code> with bounds (pages 1-5, rating 0-5). The query is stripped of control characters and capped at 120. Countries are filtered against the 26-domain list. A <code>null</code> or text where a number belongs no longer yields a 500: it yields a 400 with <code>code: invalid_params</code>.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span data-es>Login fantasma</span><span data-en>Ghost login</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Chrome headless, uno a la vez y cada 10 minutos</div>
+            <div class="layer-h" data-en>Headless Chrome, one at a time, every 10 minutes</div>
+            <div class="layer-p" data-es>Cuando Vinted devuelve cero anuncios, renovar la sesión con Playwright dentro de la petición bloqueaba hilos de gunicorn hasta su timeout de 120 s. Ahora va detrás de un <code>Lock</code> no bloqueante y un enfriamiento de 600 s: si otro hilo ya lo está intentando, la búsqueda responde al momento.</div>
+            <div class="layer-p" data-en>When Vinted returns zero listings, renewing the session with Playwright inside the request used to pin gunicorn threads until the 120 s timeout. It now sits behind a non-blocking <code>Lock</code> and a 600 s cooldown: if another thread is already trying, the search answers right away.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span data-es>Respuestas</span><span data-en>Responses</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Vacío no es error</div>
+            <div class="layer-h" data-en>Empty is not an error</div>
+            <div class="layer-p" data-es>Sin resultados responde 200 con <code>items_empty</code> y un <code>code</code> (<code>no_results_filters</code>, <code>blocked</code>). Los fallos reales llevan <code>server_error</code>, <code>db_unavailable</code> o <code>free_limit</code>. El panel pinta un estado vacío en ámbar o un error en coral según el caso, y distingue un 502 en HTML de un fallo de red.</div>
+            <div class="layer-p" data-en>No results answers 200 with <code>items_empty</code> and a <code>code</code> (<code>no_results_filters</code>, <code>blocked</code>). Real failures carry <code>server_error</code>, <code>db_unavailable</code> or <code>free_limit</code>. The dashboard draws an amber empty state or a coral error accordingly, and tells an HTML 502 apart from a network failure.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span data-es>Cliente</span><span data-en>Client</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>La última búsqueda gana</div>
+            <div class="layer-h" data-en>The latest search wins</div>
+            <div class="layer-p" data-es>Enter tiene un debounce de 300 ms. Cada búsqueda lleva un número de secuencia y un <code>AbortController</code>: lanzar otra cancela la anterior y las respuestas viejas se descartan. El timeout del navegador se queda en 115 s, por debajo de los 120 s de gunicorn.</div>
+            <div class="layer-p" data-en>Enter is debounced by 300 ms. Every search carries a sequence number and an <code>AbortController</code>: starting another cancels the previous one and stale responses are dropped. The browser timeout stays at 115 s, under gunicorn's 120 s.</div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -787,6 +826,16 @@ section{position:relative;padding:clamp(64px,9vw,120px) 0;border-top:1px solid v
           <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16"/><path d="M9 20V9"/></svg><span data-es>Cursores tipados</span><span data-en>Typed cursors</span></div>
           <div class="tech-p" data-es>Con <code>RealDictCursor</code> las filas llegan como diccionarios y saltan directas a JSON. Sin capa ORM en medio y sin desempaquetar tuplas por índice.</div>
           <div class="tech-p" data-en>With <code>RealDictCursor</code> rows come back as dictionaries and go straight out as JSON. No ORM in between, no unpacking tuples by index.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M9 21V9"/></svg><span data-es>Migraciones al importar</span><span data-en>Migrations on import</span></div>
+          <div class="tech-p" data-es>Las migraciones <code>IF NOT EXISTS</code> corren al cargar el módulo, también bajo gunicorn, con commit por sentencia: una que falla no deshace las demás. Incluyen el índice <code>(usuario_id, LOWER(query))</code> que usan el histórico de precios y las estadísticas.</div>
+          <div class="tech-p" data-en><code>IF NOT EXISTS</code> migrations run when the module loads, under gunicorn too, committing per statement: one failure doesn't roll back the rest. They include the <code>(usuario_id, LOWER(query))</code> index behind price history and stats.</div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Feedback</div>
+          <div class="tech-p" data-es>Tabla <code>feedback</code> con id UUID, categoría cerrada, mensaje de 10 a 2000 caracteres y puntuación opcional con <code>CHECK</code> 1-5. Inserción con <code>ON CONFLICT (id) DO NOTHING</code> y aviso opcional por SMTP en un hilo aparte.</div>
+          <div class="tech-p" data-en>A <code>feedback</code> table with UUID id, closed category set, a 10 to 2000 character message and an optional rating with a 1-5 <code>CHECK</code>. Inserted with <code>ON CONFLICT (id) DO NOTHING</code>, with an optional SMTP notice on a separate thread.</div>
         </div>
       </div>
     </div>
@@ -972,8 +1021,8 @@ GEMINI_RETRY_DELAYS = (<span class="nu">1</span>, <span class="nu">2</span>, <sp
       <div class="tech-grid">
         <div class="tech-card">
           <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg><span data-es>Inyeccion SQL</span><span data-en>SQL injection</span></div>
-          <div class="tech-p" data-es>Hay <b>92 consultas</b> a la base de datos en el proyecto. Cero usan f-strings o concatenación: todas pasan los valores como parámetros y es el driver quien los escapa. No hay una sola grieta por donde colar una comilla.</div>
-          <div class="tech-p" data-en><b>92 database queries</b> across the project. Zero use f-strings or concatenation: every value is passed as a parameter and the driver does the escaping. There isn't a single crack to slip a quote through.</div>
+          <div class="tech-p" data-es>Hay <b>97 consultas</b> a la base de datos en el proyecto. Cero usan f-strings o concatenación: todas pasan los valores como parámetros y es el driver quien los escapa. No hay una sola grieta por donde colar una comilla.</div>
+          <div class="tech-p" data-en><b>97 database queries</b> across the project. Zero use f-strings or concatenation: every value is passed as a parameter and the driver does the escaping. There isn't a single crack to slip a quote through.</div>
         </div>
         <div class="tech-card">
           <div class="tech-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg><span data-es>Contrasenas</span><span data-en>Passwords</span></div>
@@ -1016,8 +1065,8 @@ GEMINI_RETRY_DELAYS = (<span class="nu">1</span>, <span class="nu">2</span>, <sp
           <div class="layer-body">
             <div class="layer-h" data-es>Diez intentos por IP, seis por cuenta</div>
             <div class="layer-h" data-en>Ten attempts per IP, six per account</div>
-            <div class="layer-p" data-es>Un atacante puede probar diez contraseñas cada cinco minutos desde una IP. Pero si reparte el ataque entre mil IPs para esquivar ese límite, se topa con el segundo: <b>seis intentos por hora contra la misma cuenta, venga de donde venga</b>. Diluir el origen ya no sirve de nada. Y la ventana es deslizante, no un contador que se pone a cero a la hora en punto, así que tampoco vale esperar al cambio de hora para disparar en ráfaga.</div>
-            <div class="layer-p" data-en>An attacker can try ten passwords every five minutes from one IP. But spread the attack across a thousand IPs to dodge that limit and they hit the second one: <b>six attempts per hour against the same account, wherever they come from</b>. Diluting the source buys nothing. And the window slides, it isn't a counter that zeroes on the hour, so waiting for the rollover to fire a burst doesn't work either.</div>
+            <div class="layer-p" data-es>Un atacante puede probar diez contraseñas cada cinco minutos desde una IP. Pero si reparte el ataque entre mil IPs para esquivar ese límite, se topa con el segundo: <b>seis intentos cada quince minutos contra la misma cuenta, venga de donde venga</b>. Diluir el origen ya no sirve de nada. Y la ventana es deslizante, no un contador que se pone a cero a la hora en punto, así que tampoco vale esperar al cambio de hora para disparar en ráfaga.</div>
+            <div class="layer-p" data-en>An attacker can try ten passwords every five minutes from one IP. But spread the attack across a thousand IPs to dodge that limit and they hit the second one: <b>six attempts every fifteen minutes against the same account, wherever they come from</b>. Diluting the source buys nothing. And the window slides, it isn't a counter that zeroes on the hour, so waiting for the rollover to fire a burst doesn't work either.</div>
           </div>
         </div>
         <div class="layer">
@@ -1092,10 +1141,28 @@ GEMINI_RETRY_DELAYS = (<span class="nu">1</span>, <span class="nu">2</span>, <sp
             <div class="layer-p" data-en>Signing up isn't enough: until the activation link is opened, the account stays pending. Anyone who'd rather not create yet another password signs in with Google over OAuth 2.0, and then credentials never touch this server at all.</div>
           </div>
         </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Onboarding</div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Google no se salta la pregunta</div>
+            <div class="layer-h" data-en>Google doesn't skip the question</div>
+            <div class="layer-p" data-es>Las cuentas creadas con Google nacen con <code>marketing_question</code> a <code>NULL</code>. Mientras siga vacío (o con el antiguo valor <code>Google OAuth</code>), <code>/app</code> redirige a <code>/onboarding</code> y <code>/api/user</code> devuelve <code>needs_onboarding</code>. La respuesta se valida contra una lista cerrada, u "Otro" con 120 caracteres como máximo.</div>
+            <div class="layer-p" data-en>Accounts created with Google start with <code>marketing_question</code> set to <code>NULL</code>. While it stays empty (or holds the legacy <code>Google OAuth</code> value), <code>/app</code> redirects to <code>/onboarding</code> and <code>/api/user</code> returns <code>needs_onboarding</code>. The answer is validated against a closed list, or "Other" capped at 120 characters.</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span data-es>Formularios</span><span data-en>Forms</span></div>
+          <div class="layer-body">
+            <div class="layer-h" data-es>Feedback y onboarding también tienen techo</div>
+            <div class="layer-h" data-en>Feedback and onboarding are capped too</div>
+            <div class="layer-p" data-es>Cinco mensajes de feedback por usuario y hora, diez respuestas de onboarding por hora. Ambos exigen sesión, validan en servidor aunque el navegador ya lo haga y nunca devuelven el error interno al cliente.</div>
+            <div class="layer-p" data-en>Five feedback messages per user per hour, ten onboarding answers per hour. Both require a session, validate on the server even when the browser already did, and never leak the internal error to the client.</div>
+          </div>
+        </div>
       </div>
 
       <div class="spec-list">
-        <span class="spec"><b>SQL</b> · 92 <span data-es>consultas parametrizadas</span><span data-en>parameterised queries</span></span>
+        <span class="spec"><b>SQL</b> · 97 <span data-es>consultas parametrizadas</span><span data-en>parameterised queries</span></span>
         <span class="spec"><b>LOGIN</b> · 10/5min · IP</span>
         <span class="spec"><b>LOGIN</b> · 6/15min · <span data-es>cuenta</span><span data-en>account</span></span>
         <span class="spec"><b>IA</b> · 20-30/h · <span data-es>usuario</span><span data-en>user</span></span>
@@ -1104,7 +1171,9 @@ GEMINI_RETRY_DELAYS = (<span class="nu">1</span>, <span class="nu">2</span>, <sp
         <span class="spec"><b>HASH</b> · Werkzeug + salt</span>
         <span class="spec"><b>RESET</b> · 1h TTL</span>
         <span class="spec"><b>WEBHOOK</b> · HMAC Stripe</span>
-        <span class="spec"><b>OAUTH</b> · Google 2.0</span>
+        <span class="spec"><b>OAUTH</b> · Google 2.0 · onboarding</span>
+        <span class="spec"><b>FEEDBACK</b> · 5/h · <span data-es>usuario</span><span data-en>user</span></span>
+        <span class="spec"><b>SEARCH</b> · 20/min · <span data-es>usuario</span><span data-en>user</span></span>
         <span class="spec"><b>SECRETOS</b> · env + GitHub Secrets</span>
       </div>
     </div>
