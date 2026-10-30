@@ -103,6 +103,8 @@ flowchart LR
     classDef ext fill:#13121f,stroke:#ffa9fc,color:#e4e0f3;
     class API,SCAN,AP,PW,UI,EXT core;
     class DB,VINTED,TG,DC,STRIPE,GEM ext;
+    style Client fill:#13121f,stroke:#f0b0ff,color:#e4e0f3
+    style Server fill:#13121f,stroke:#cdbdff,color:#e4e0f3
 ```
 
 ### Flujo de una alerta
