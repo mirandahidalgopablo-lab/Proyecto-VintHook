@@ -21,8 +21,8 @@
 <p>
   <a href="https://vinthook.com"><b>🌐 vinthook.com</b></a> ·
   <a href="https://mirandahidalgopablo-lab.github.io/Proyecto-VintHook/"><b>✨ Landing del proyecto</b></a> ·
-  <a href="FichaTecnicaVintHook.html"><b>📄 Ficha técnica</b></a> ·
-  <a href="DireccionVisualVintHook.html"><b>🎨 Dirección visual</b></a>
+  <a href="https://fichatecnicavinthook.netlify.app/"><b>📄 Ficha técnica</b></a> ·
+  <a href="https://direccionvisualvinthook.netlify.app/"><b>🎨 Dirección visual</b></a>
 </p>
 
 </div>
