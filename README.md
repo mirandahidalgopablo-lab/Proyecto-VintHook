@@ -143,69 +143,7 @@ sequenceDiagram
 | **DevOps** | Docker · GitHub Actions (deploy por SSH) · Oracle Cloud (Ubuntu ARM) |
 | **Seguridad** | Cifrado de datos sensibles (`cryptography`/Fernet) · CSP · rate limiting · webhooks firmados |
 
----
 
-## 🚀 Instalación rápida
-
-> 🔒 **Nota:** este repositorio es el *showcase* público del proyecto. El código de producción vive en un repositorio privado; puedo darte acceso para revisión técnica si me lo pides.
-
-### Requisitos
-
-- Python **3.11+**
-- PostgreSQL **14+**
-- Google Chrome (para Playwright / la extensión)
-- Docker *(opcional)*
-
-### 1 · Variables de entorno
-
-```bash
-cp .env.example .env
-# Rellena DATABASE_URL, SECRET_KEY, credenciales de Google OAuth, Stripe y Gemini
-```
-
-Consulta [`.env.example`](.env.example) para ver todas las variables disponibles.
-
-### 2 · Ejecución local
-
-```bash
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-playwright install chromium
-gunicorn app:app --workers 1 --threads 8 --worker-class gthread --bind 0.0.0.0:10000
-```
-
-### 3 · Con Docker
-
-```bash
-docker build -t vinthook .
-docker run -d --name vinthook --env-file .env -p 10000:10000 vinthook
-```
-
-Abre `http://localhost:10000` 🎉
-
-### 4 · Extensión de navegador
-
-1. Abre `chrome://extensions` y activa el **modo desarrollador**.
-2. Pulsa **Cargar descomprimida** y selecciona la carpeta `extension/`.
-3. Inicia sesión en Vinted y en VintHook: la extensión enlaza ambas sesiones.
-
----
-
-## 📁 Contenido de este repositorio
-
-```
-Proyecto-VintHook/
-├── assets/                     # Capturas del producto
-├── index.html                  # Landing del proyecto (GitHub Pages)
-├── FichaTecnicaVintHook.html   # Ficha técnica
-├── DireccionVisualVintHook.html# Guía de dirección visual
-├── .env.example                # Plantilla de configuración
-├── requirements.txt            # Dependencias del backend
-└── LICENSE
-```
-
----
 
 <div align="center">
 
