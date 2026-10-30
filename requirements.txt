@@ -1,0 +1,31 @@
+# Web
+flask>=3.0
+werkzeug>=3.0
+gunicorn>=21.2
+whitenoise>=6.6
+
+# Database
+psycopg2-binary>=2.9
+
+# HTTP / scraping
+aiohttp>=3.9
+curl-cffi>=0.11
+requests>=2.31
+
+# Automation
+playwright>=1.42
+playwright-stealth>=1.0
+
+# Payments
+stripe>=7.0
+
+# Data & matching
+thefuzz[speedup]>=0.22
+openpyxl>=3.1
+
+# Security & config
+cryptography>=42.0
+python-dotenv>=1.0
+
+# Logging
+rich>=13.0

@@ -1,0 +1,35 @@
+# Secrets & local config
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+venv/
+.venv/
+env/
+
+# Logs & runtime
+*.log
+nohup.out
+*.bak
+
+# Browser automation profiles (contain session cookies)
+perfil_bot_chrome/
+perfil_vinted_max/
+playwright/.auth/
+
+# Extension builds
+extension/*.zip
+extension/*.crx
+extension/*.pem
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
